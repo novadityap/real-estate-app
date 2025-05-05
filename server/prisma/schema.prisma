@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String @id @default(uuid())
+  username String @unique
+  email String @unique
+  password String
+  avatar String
+  isVerified Boolean @default(false)
+  roleId String
+  role Role @relation(fields: [roleId], references: [id])
+  properties Property[]
+  verificationToken String?
+  verificationTokenExpires DateTime?
+  resetToken String?
+  resetTokenExpires DateTime?
+  refreshToken String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Blacklist {
+  id String @id @default(uuid())
+  token String
+  blacklistedAt DateTime @default(now())
+}
+
+model Role {
+  id String @id @default(uuid())
+  name String @unique
+  users User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Property {
+  id String @id @default(uuid())
+  name String
+  description String
+  address String
+  regularPrice Int
+  discountPrice Int?
+  bathroom Int
+  bedroom Int
+  parking Boolean
+  furnished Boolean
+  type String
+  offer Boolean
+  images String[]
+  ownerId String
+  owner User @relation(fields: [ownerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
