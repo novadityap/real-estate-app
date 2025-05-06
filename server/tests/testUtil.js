@@ -1,10 +1,10 @@
-import { readFile } from 'node:fs/promises';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import cloudinary from '../src/utils/cloudinary.js';
 import extractPublicId from '../src/utils/extractPublicId.js';
 import prisma from '../src/utils/database.js';
 import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 
 export const createTestBlacklist = async (fields = {}) => {
   await prisma.blacklist.create({
@@ -134,8 +134,65 @@ export const removeAllTestRoles = async () => {
   });
 };
 
-export const removeTestRole = async (fields = {}) => {
-  await prisma.role.deleteMany({
+export const createTestProperty = async (fields = {}) => {
+  await createTestUser();
+  const user = await getTestUser();
+
+  return await prisma.property.create({
+    data: {
+      name: 'test',
+      description: 'test',
+      address: 'test',
+      regularPrice: 10.0,
+      discountPrice: 5.0,
+      bathroom: 2,
+      bedroom: 5,
+      parking: true,
+      furnished: false,
+      offer: true,
+      type: 'home',
+      ownerId: user.id,
+      ...fields,
+    },
+  });
+};
+
+export const createManyTestProperties = async () => {
+  await createTestUser();
+  const user = await getTestUser();
+
+  for (let i = 0; i < 15; i++) {
+    await prisma.property.create({
+      data: {
+        name: `test`,
+        description: `test${i}`,
+        address: `test${i}`,
+        regularPrice: 10.0,
+        discountPrice: 5.0,
+        bathroom: 2,
+        bedroom: 5,
+        parking: true,
+        furnished: false,
+        offer: true,
+        type: 'home',
+        ownerId: user.id,
+      },
+    });
+  }
+};
+
+export const updateTestProperty = async (fields = {}) => {
+  const property = await getTestProperty();
+  await prisma.property.update({
+    where: {
+      id: property.id,
+    },
+    data: fields,
+  });
+};
+
+export const getTestProperty = async (fields = {}) => {
+  return await prisma.property.findFirst({
     where: {
       name: 'test',
       ...fields,
@@ -143,23 +200,19 @@ export const removeTestRole = async (fields = {}) => {
   });
 };
 
-// export const createTestProperty = async (fields = {}) => {
-//   const user = await createTestUser();
-
-//   return await Post.create({
-//     title: 'test',
-//     price: 20.000,
-//     decription: 'test',
-//     type: 'HOME',
-//     ownerId: user.id,
-//     ...fields,
-//   });
-// };
+export const removeAllTestProperties = async (fields = {}) => {
+  await prisma.property.deleteMany({
+    where: {
+      name: 'test',
+      ...fields,
+    },
+  });
+};
 
 export const createToken = (type, role, userId) => {
   return jwt.sign(
     {
-      id: userId,
+      id: userId ? userId : uuidv4(),
       role: role,
     },
     type === 'auth' ? process.env.JWT_SECRET : process.env.JWT_REFRESH_SECRET,
@@ -174,13 +227,21 @@ export const createToken = (type, role, userId) => {
 
 export const checkFileExists = async url => {
   try {
-    await cloudinary.api.resource(extractPublicId(url));
+    const urls = Array.isArray(url) ? url : [url];
+    for (const item of urls) {
+      await cloudinary.api.resource(extractPublicId(item));
+    }
     return true;
   } catch (e) {
+    console.log('e error', e);
     return false;
   }
 };
 
 export const removeTestFile = async url => {
-  await cloudinary.uploader.destroy(extractPublicId(url));
+  const urls = Array.isArray(url) ? url : [url];
+
+  for (const item of urls) {
+    await cloudinary.uploader.destroy(extractPublicId(item));
+  }
 };
