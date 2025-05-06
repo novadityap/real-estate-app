@@ -4,7 +4,6 @@ import {
   createTestRole,
   createManyTestRoles,
   removeAllTestRoles,
-  removeTestRole,
   getTestRole,
 } from './testUtil.js';
 
@@ -141,13 +140,13 @@ describe('GET /api/roles/:roleId', () => {
     expect(result.body.message).toBe('Role retrieved successfully');
     expect(result.body.data).toBeDefined();
 
-    await removeTestRole();
+    await removeAllTestRoles();
   });
 });
 
 describe('POST /api/roles', () => {
   afterEach(async () => {
-    await removeTestRole();
+    await removeAllTestRoles();
   });
 
   it('should return an error if user does not have permission', async () => {
@@ -276,7 +275,7 @@ describe('DELETE /api/roles/:roleId', () => {
   });
 
   afterEach(async () => {
-    await removeTestRole();
+    await removeAllTestRoles();
   });
 
   it('should return an error if user does not have permission', async () => {
