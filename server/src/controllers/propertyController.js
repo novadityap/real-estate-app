@@ -16,12 +16,6 @@ import prisma from '../utils/database.js';
 const show = async (req, res, next) => {
   try {
     const propertyId = validate(getPropertySchema, req.params.propertyId);
-    await checkOwnership({
-      modelName: 'property',
-      paramsId: propertyId,
-      ownerFieldName: 'ownerId',
-      currentUser: req.user,
-    });
 
     const property = await prisma.property.findUnique({
       where: {
