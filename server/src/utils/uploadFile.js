@@ -4,35 +4,33 @@ import ResponseError from './responseError.js';
 import logger from './logger.js';
 import cloudinary from './cloudinary.js';
 
-const normalizeField = fields => {
+const normalizeField = (fields) => {
   const normalized = {};
-  const isAlwaysArrayKey = key => ['roles', 'permissions'].includes(key);
-  const normalizeKey = key => (key.endsWith('[]') ? key.slice(0, -2) : key);
 
-  for (const key in fields) {
-    const normalizedKey = normalizeKey(key);
+  const normalizeKey = (key) =>
+    key.endsWith('[]') ? key.slice(0, -2) : key;
 
-    if (isAlwaysArrayKey(normalizedKey)) {
-      normalized[normalizedKey] = Array.isArray(fields[key])
-        ? fields[key]
-        : [fields[key]];
-    } else if (fields[key].length === 1) {
-      normalized[normalizedKey] = fields[key][0];
+  for (const rawKey in fields) {
+    const key = normalizeKey(rawKey);
+    const value = fields[rawKey];
+
+    if (Array.isArray(value) && value.length === 1) {
+      normalized[key] = value[0];
     } else {
-      normalized[normalizedKey] = fields[key];
+      normalized[key] = value;
     }
   }
 
   return normalized;
 };
 
+
 const uploadFile = (
   req,
-  { fieldname, isRequired = false, formSchema = null }
+  { fieldname, folderName, isRequired = false, maxFiles = 1, formSchema = null }
 ) => {
   return new Promise((resolve, reject) => {
     const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-    const maxFiles = 1;
     const maxFileSize = 2 * 1024 * 1024;
     const uploadErrors = {};
 
@@ -86,7 +84,7 @@ const uploadFile = (
       } else {
         if (uploadErrors && uploadedFiles) {
           logger.warn('validation errors');
-          
+
           return reject(
             new ResponseError('Validation errors', 400, uploadErrors)
           );
@@ -94,13 +92,22 @@ const uploadFile = (
       }
 
       if (uploadedFiles) {
-        const result = await cloudinary.uploader.upload(uploadedFiles[0].filepath, {
-          folder: `${fieldname}s`
+        const uploadedResults = [];
+        for (const file of uploadedFiles) {
+          const result = await cloudinary.uploader.upload(file.filepath, {
+            folder: folderName,
+          });
+
+          uploadedResults.push(result);
+        }
+
+        return resolve({
+          files: uploadedResults,
+          fields,
         });
-        return resolve({ file: result, fields });
       }
 
-      resolve({ file: null, fields });
+      resolve({ files: null, fields });
     });
   });
 };
