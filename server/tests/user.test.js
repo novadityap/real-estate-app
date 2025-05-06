@@ -5,7 +5,6 @@ import {
   createTestUser,
   createManyTestUsers,
   removeAllTestUsers,
-  removeTestUser,
   updateTestUser,
   getTestUser,
   removeTestFile,
@@ -98,7 +97,7 @@ describe('GET /api/users/:userId', () => {
     expect(result.status).toBe(403);
     expect(result.body.message).toBe('Permission denied');
 
-    await removeTestUser();
+    await removeAllTestUsers();
   });
 
   it('should return an error if user id is invalid', async () => {
@@ -132,7 +131,7 @@ describe('GET /api/users/:userId', () => {
     expect(result.body.message).toBe('User retrieved successfully');
     expect(result.body.data).toBeDefined();
 
-    await removeTestUser();
+    await removeAllTestUsers();
   });
 });
 
@@ -146,7 +145,7 @@ describe('POST /api/users', () => {
   });
 
   afterEach(async () => {
-    await removeTestUser();
+    await removeAllTestUsers();
   });
 
   it('should return an error if user does not have permission', async () => {
@@ -539,7 +538,7 @@ describe('DELETE /api/users/:userId', () => {
   });
 
   afterEach(async () => {
-    await removeTestUser();
+    await removeAllTestUsers();
   });
 
   it('should return an error if user is not owned by current user', async () => {

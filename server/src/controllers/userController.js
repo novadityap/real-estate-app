@@ -71,8 +71,9 @@ const updateProfile = async (req, res, next) => {
       throw new ResponseError('User not found', 404);
     }
 
-    const { file, fields } = await uploadFile(req, {
+    const { files, fields } = await uploadFile(req, {
       fieldname: 'avatar',
+      folderName: 'avatars',
       formSchema: updateProfileSchema,
     });
 
@@ -113,11 +114,11 @@ const updateProfile = async (req, res, next) => {
     if (fields.password)
       fields.password = await bcrypt.hash(fields.password, 10);
 
-    if (file) {
+    if (files && files.length > 0) {
       if (user.avatar !== process.env.DEFAULT_AVATAR_URL)
         await cloudinary.uploader.destroy(extractPublicId(user.avatar));
 
-      fields.avatar = file.secure_url;
+      fields.avatar = files[0].secure_url;
       logger.info('avatar updated successfully');
     }
 
@@ -156,7 +157,16 @@ const search = async (req, res, next) => {
               OR: [
                 { username: { contains: q, mode: 'insensitive' } },
                 { email: { contains: q, mode: 'insensitive' } },
-                { role: { name: { contains: q, mode: 'insensitive' } } },
+                {
+                  role: {
+                    is: {
+                      name: {
+                        contains: q,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+                },
               ],
             }
           : undefined,
@@ -182,7 +192,16 @@ const search = async (req, res, next) => {
               OR: [
                 { username: { contains: q, mode: 'insensitive' } },
                 { email: { contains: q, mode: 'insensitive' } },
-                { role: { name: { contains: q, mode: 'insensitive' } } },
+                {
+                  role: {
+                    is: {
+                      name: {
+                        contains: q,
+                        mode: 'insensitive',
+                      },
+                    },
+                  },
+                },
               ],
             }
           : undefined,
@@ -302,8 +321,9 @@ const update = async (req, res, next) => {
       throw new ResponseError('User not found', 404);
     }
 
-    const { file, fields } = await uploadFile(req, {
+    const { files, fields } = await uploadFile(req, {
       fieldname: 'avatar',
+      folderName: 'avatars',
       formSchema: updateUserSchema,
     });
 
@@ -359,11 +379,11 @@ const update = async (req, res, next) => {
     if (fields.password)
       fields.password = await bcrypt.hash(fields.password, 10);
 
-    if (file) {
+    if (files && files.length > 0) {
       if (user.avatar !== process.env.DEFAULT_AVATAR_URL)
         await cloudinary.uploader.destroy(extractPublicId(user.avatar));
 
-      fields.avatar = file.secure_url;
+      fields.avatar = files[0].secure_url;
       logger.info('avatar updated successfully');
     }
 
