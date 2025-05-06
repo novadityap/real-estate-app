@@ -55,7 +55,7 @@ model Property {
   offer Boolean
   images String[]
   ownerId String
-  owner User @relation(fields: [ownerId], references: [id])
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
