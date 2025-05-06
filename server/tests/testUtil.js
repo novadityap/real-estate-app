@@ -210,19 +210,20 @@ export const removeAllTestProperties = async (fields = {}) => {
 };
 
 export const createToken = (type, role, userId) => {
-  return jwt.sign(
-    {
-      id: userId ? userId : uuidv4(),
-      role: role,
-    },
-    type === 'auth' ? process.env.JWT_SECRET : process.env.JWT_REFRESH_SECRET,
-    {
-      expiresIn:
-        type === 'auth'
-          ? process.env.JWT_EXPIRES
-          : process.env.JWT_REFRESH_EXPIRES,
-    }
-  );
+  const secret = type === 'auth'
+    ? process.env.JWT_SECRET
+    : process.env.JWT_REFRESH_SECRET;
+
+  const expiresIn = type === 'auth'
+    ? process.env.JWT_EXPIRES
+    : process.env.JWT_REFRESH_EXPIRES;
+
+  const payload = {
+    id: userId || uuidv4(),
+    role,
+  };
+
+  return jwt.sign(payload, secret, { expiresIn });
 };
 
 export const checkFileExists = async url => {
@@ -233,7 +234,6 @@ export const checkFileExists = async url => {
     }
     return true;
   } catch (e) {
-    console.log('e error', e);
     return false;
   }
 };

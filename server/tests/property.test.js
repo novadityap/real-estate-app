@@ -331,7 +331,6 @@ describe('DELETE /api/properties/:propertyId', () => {
       images: [uploadResult.secure_url],
     });
     const updatedProperty = getTestProperty();
-    console.log('updatedProperty', updatedProperty);
     const result = await request(app)
       .delete(`/api/properties/${property.id}`)
       .set('Authorization', `Bearer ${global.adminToken}`);
