@@ -1,6 +1,6 @@
 import express from 'express';
 import propertyController from '../controllers/propertyController.js';
-// import dashboardController from '../controllers/dashboardController.js';
+import dashboardController from '../controllers/dashboardController.js';
 import roleController from '../controllers/roleController.js';
 import userController from '../controllers/userController.js';
 import authController from '../controllers/authController.js';
@@ -26,7 +26,7 @@ apiRouter.use(authenticate);
 apiRouter.post('/auth/signout', authController.signout);
 
 // Dashboard API
-// apiRouter.get('/dashboard', authorize(['admin']), dashboardController.stats);
+apiRouter.get('/dashboard', authorize(['admin']), dashboardController.stats);
 
 // Role API
 apiRouter.get('/roles', authorize(['admin']), roleController.list);
