@@ -31,7 +31,8 @@ pipeline {
 
     stage('Test server') {
       steps {
-        dir('server') {
+        withCredentials([file(credentialsId: 'realestate_server_env', variable: 'SERVER_ENV')]) {
+          dir('server') {
           sh '''
             cp "${SERVER_ENV}" .env
             npm run test
