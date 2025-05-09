@@ -1,11 +1,6 @@
 pipeline {
   agent any
 
-  environment {
-    SERVER_ENV = credentials('realestate_server_env')
-    CLIENT_ENV = credentials('realestate_client_env')
-  }
-
   stages {
     stage('Checkout') {
       steps {
@@ -31,11 +26,13 @@ pipeline {
 
     stage('Test server') {
       steps {
-        withCredentials([file(credentialsId: 'realestate_server_env', variable: 'SERVER_ENV')]) {
+        withCredentials([file(credentialsId: 'realestate_server_env', variable: 'SERVER_ENV_FILE')]) {
           dir('server') {
           sh '''
-            cp "${SERVER_ENV}" .env
-            npm run test
+            cp "${SERVER_ENV_FILE}" .env
+              chmod 600 .env
+              npm run test
+              rm -f .env 
           '''
           }
         }
