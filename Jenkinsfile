@@ -37,6 +37,7 @@ pipeline {
             cp "${SERVER_ENV}" .env
             npm run test
           '''
+          }
         }
       }
     }
