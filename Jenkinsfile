@@ -14,14 +14,11 @@ pipeline {
       }
     }
 
-    stage('Load environment variables') {
+    stage('Prepare environment files') {
       steps {
-         script {
-          def serverEnv = readProperties file: '/var/jenkins_home/env/.env.server.realestate'
-          serverEnv.each { k, v -> env."$k" = v }
-
+        script {
           def clientEnv = readProperties file: '/var/jenkins_home/env/.env.client.realestate'
-          writeFile file: '.env', text: clientEnv.collect { k, v -> "${k}=${v}" }.join('\n')
+          writeFile file: '.env.client', text: clientEnv.collect { k, v -> "${k}=${v}" }.join('\n')
         }
       }
     }
@@ -49,7 +46,13 @@ pipeline {
     stage('Test server') {
       steps {
         dir('server') {
-          sh 'npm run test'
+          sh '''
+            cp /var/jenkins_home/env/.env.server.realestate .env
+            set -a
+            source .env
+            set +a
+            npm run test
+          '''
         }
       }
     }
