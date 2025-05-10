@@ -1,5 +1,11 @@
 pipeline {
-  agent any
+
+  agent {
+    docker {
+      image: 'node:22.15-alpine'
+      args: '-v /var/jenkins_home:/var/jenkins_home'
+    }
+  }
 
   stages {
     stage('Checkout') {
@@ -8,10 +14,26 @@ pipeline {
       }
     }
 
-    stage('Install client dependencies') {
+    stage('Load environment variables') {
       steps {
-        dir('client') {
-          sh 'npm install'
+         script {
+          def serverEnv = readProperties file: '/var/jenkins_home/env/.env.server.realestate'
+          serverEnv.each { k, v -> env."$k" = v }
+
+          def clientEnv = readProperties file: '/var/jenkins_home/env/.env.client.realestate'
+          writeFile file: '.env', text: clientEnv.collect { k, v -> "${k}=${v}" }.join('\n')
+        }
+      }
+    }
+
+    stage('Install client dependencies and build') {
+      steps {
+         dir('client') {
+          sh '''
+            cp ../.env .env
+            npm install
+            npm run build
+          '''
         }
       }
     }
@@ -26,23 +48,8 @@ pipeline {
 
     stage('Test server') {
       steps {
-        withCredentials([file(credentialsId: 'realestate_server_env', variable: 'SERVER_ENV_FILE')]) {
-          dir('server') {
-          sh '''
-            cp "${SERVER_ENV_FILE}" .env
-              chmod 600 .env
-              npm run test
-              rm -f .env 
-          '''
-          }
-        }
-      }
-    }
-
-    stage('Run server') {
-      steps {
         dir('server') {
-          sh 'npm run start'
+          sh 'npm run test'
         }
       }
     }
