@@ -2,8 +2,8 @@ pipeline {
 
   agent {
     docker {
-      image: 'node:22.15-alpine'
-      args: '-v /var/jenkins_home:/var/jenkins_home'
+      image 'node:22.15-alpine'
+      args '-v /var/jenkins_home:/var/jenkins_home'
     }
   }
 
