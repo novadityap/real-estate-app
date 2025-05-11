@@ -174,7 +174,7 @@ describe('POST /api/properties', () => {
       .field('parking', true)
       .field('furnished', false)
       .field('offer', true)
-      .field('type', 'house')
+      .field('type', 'sale')
       .attach('images', testPropertyPath);
 
     expect(result.status).toBe(201);

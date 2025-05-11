@@ -150,7 +150,7 @@ export const createTestProperty = async (fields = {}) => {
       parking: true,
       furnished: false,
       offer: true,
-      type: 'home',
+      type: 'sale',
       ownerId: user.id,
       ...fields,
     },
@@ -174,7 +174,7 @@ export const createManyTestProperties = async () => {
         parking: true,
         furnished: false,
         offer: true,
-        type: 'home',
+        type: 'sale',
         ownerId: user.id,
       },
     });

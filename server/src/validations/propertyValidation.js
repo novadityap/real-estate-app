@@ -1,6 +1,6 @@
 import Joi from 'joi';
 
-const propertyTypes = ['house', 'apartment', 'villa', 'other'];
+const propertyTypes = ['sale', 'rent'];
 const propertySchema = Joi.object({
   name: Joi.string().min(3).max(100).required(),
   description: Joi.string().required(),
