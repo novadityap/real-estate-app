@@ -3,6 +3,7 @@ import {
   updatePropertySchema,
   getPropertySchema,
   searchPropertySchema,
+  removeImageSchema,
 } from '../validations/propertyValidation.js';
 import validate from '../utils/validate.js';
 import uploadFile from '../utils/uploadFile.js';
@@ -290,4 +291,112 @@ const remove = async (req, res, next) => {
   }
 };
 
-export default { show, search, create, update, remove };
+const uploadImage = async (req, res, next) => {
+  try {
+    const propertyId = validate(getPropertySchema, req.params.propertyId);
+    await checkOwnership({
+      modelName: 'property',
+      paramsId: propertyId,
+      ownerFieldName: 'ownerId',
+      currentUser: req.user,
+    });
+
+    const property = await prisma.property.findUnique({
+      where: {
+        id: propertyId,
+      },
+    });
+
+    if (!property) {
+      logger.warn('property not found');
+      throw new ResponseError('Property not found', 404);
+    }
+
+    const existingFileCount = property.images.length;
+
+    const { files } = await uploadFile(req, {
+      fieldname: 'images',
+      maxFiles: 5,
+      folderName: 'properties',
+      existingFileCount,
+    });
+
+    for (const file of files) {
+      property.images.push(file.secure_url);
+    }
+
+    await prisma.property.update({
+      where: {
+        id: propertyId,
+      },
+      data: {
+        images: property.images,
+      },
+    });
+
+    logger.info('property images updated successfully');
+    res.json({
+      code: 200,
+      message: 'Property images updated successfully',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+const removeImage = async (req, res, next) => {
+  try {
+    const propertyId = validate(getPropertySchema, req.params.propertyId);
+    const fields = validate(removeImageSchema, req.body);
+
+    await checkOwnership({
+      modelName: 'property',
+      paramsId: propertyId,
+      ownerFieldName: 'ownerId',
+      currentUser: req.user,
+    });
+
+    const property = await prisma.property.findUnique({
+      where: {
+        id: propertyId,
+      },
+    });
+
+    if (!property) {
+      logger.warn('property not found');
+      throw new ResponseError('Property not found', 404);
+    }
+
+    if (!property.images.includes(fields.image)) {
+      throw new ResponseError('Image not found in this property', 404);
+    }
+
+    const publicId = extractPublicId(fields.image);
+    await cloudinary.uploader.destroy(publicId);
+
+    const updatedImages = property.images.filter(img => img !== fields.image);
+
+    await prisma.property.update({
+      where: { id: propertyId },
+      data: { images: updatedImages },
+    });
+
+    logger.info('property image deleted successfully');
+    res.json({
+      code: 200,
+      message: 'Property image deleted successfully',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+export default {
+  show,
+  search,
+  create,
+  update,
+  remove,
+  removeImage,
+  uploadImage,
+};

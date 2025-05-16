@@ -46,7 +46,9 @@ apiRouter.delete('/users/:userId', authorize(['admin', 'user']), userController.
 
 // Property API
 apiRouter.post('/properties', authorize(['admin', 'user']), propertyController.create);
-apiRouter.patch('/properties/:propertyId', authorize(['admin']), propertyController.update);
+apiRouter.patch('/properties/:propertyId', authorize(['admin', 'user']), propertyController.update);
 apiRouter.delete('/properties/:propertyId', authorize(['admin', 'user']), propertyController.remove);
+apiRouter.post('/properties/:propertyId/images', authorize(['admin', 'user']), propertyController.uploadImage);
+apiRouter.delete('/properties/:propertyId/images', authorize(['admin', 'user']), propertyController.removeImage);
 
 export default apiRouter;

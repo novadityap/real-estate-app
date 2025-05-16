@@ -6,17 +6,35 @@ const propertySchema = Joi.object({
   description: Joi.string().required(),
   address: Joi.string().required(),
   regularPrice: Joi.number().integer().positive().required(),
-  discountPrice: Joi.number().integer().positive().optional(),
+
+  discountPrice: Joi.when('offer', {
+    is: true,
+    then: Joi.number()
+      .integer()
+      .positive()
+      .less(Joi.ref('regularPrice'))
+      .required()
+      .messages({
+        'number.less': 'Discount price must be less than regular price',
+        'any.required': 'Discount price is required when offer is true',
+      }),
+    otherwise: Joi.number().forbidden().messages({
+      'any.unknown': 'Discount price is not allowed when offer is false',
+    }),
+  }),
+
   bathroom: Joi.number().integer().positive().required(),
   bedroom: Joi.number().integer().positive().required(),
   parking: Joi.boolean().required(),
   furnished: Joi.boolean().required(),
+
   type: Joi.string()
-  .valid(...propertyTypes)
-  .required()
-  .messages({
-    'any.only': `Property type must be one of: ${propertyTypes.join(', ')}`,
-  }),
+    .valid(...propertyTypes)
+    .required()
+    .messages({
+      'any.only': `Property type must be one of: ${propertyTypes.join(', ')}`,
+    }),
+
   offer: Joi.boolean().required(),
 });
 
@@ -34,7 +52,16 @@ export const getPropertySchema = Joi.string()
     'string.guid': 'Property id is invalid',
   });
 
+export const removeImageSchema = Joi.object({
+  image: Joi.string().uri().required().messages({
+    'string.base': 'Image must be a string',
+    'string.uri': 'Image URL must be a valid URL',
+    'any.required': 'Image is required',
+  }),
+});
+
 export const createPropertySchema = propertySchema;
-export const updatePropertySchema = propertySchema.fork(Object.keys(propertySchema.describe().keys), (schema) =>
-  schema.optional()
+export const updatePropertySchema = propertySchema.fork(
+  Object.keys(propertySchema.describe().keys),
+  schema => schema.optional()
 );
