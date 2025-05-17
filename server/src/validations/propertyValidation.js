@@ -6,7 +6,7 @@ const propertySchema = Joi.object({
   description: Joi.string().required(),
   address: Joi.string().required(),
   regularPrice: Joi.number().integer().positive().required(),
-
+  offer: Joi.boolean().required(),
   discountPrice: Joi.when('offer', {
     is: true,
     then: Joi.number()
@@ -22,20 +22,16 @@ const propertySchema = Joi.object({
       'any.unknown': 'Discount price is not allowed when offer is false',
     }),
   }),
-
   bathroom: Joi.number().integer().positive().required(),
   bedroom: Joi.number().integer().positive().required(),
   parking: Joi.boolean().required(),
   furnished: Joi.boolean().required(),
-
   type: Joi.string()
     .valid(...propertyTypes)
     .required()
     .messages({
       'any.only': `Property type must be one of: ${propertyTypes.join(', ')}`,
     }),
-
-  offer: Joi.boolean().required(),
 });
 
 export const searchPropertySchema = Joi.object({
