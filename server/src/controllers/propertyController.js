@@ -334,10 +334,10 @@ const uploadImage = async (req, res, next) => {
       },
     });
 
-    logger.info('property images updated successfully');
-    res.json({
-      code: 200,
-      message: 'Property images updated successfully',
+    logger.info('property images uploaded successfully');
+    res.status(201).json({
+      code: 201,
+      message: 'Property images uploaded successfully',
     });
   } catch (e) {
     next(e);

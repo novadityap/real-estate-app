@@ -75,6 +75,13 @@ export const getTestUser = async (fields = {}) => {
       username: 'test',
       ...fields,
     },
+    include: {
+      properties: {
+        select: {
+          images: true,
+        },
+      },
+    },
   });
 };
 
@@ -210,13 +217,11 @@ export const removeAllTestProperties = async (fields = {}) => {
 };
 
 export const createToken = (type, role, userId) => {
-  const secret = type === 'auth'
-    ? process.env.JWT_SECRET
-    : process.env.JWT_REFRESH_SECRET;
+  const secret =
+    type === 'auth' ? process.env.JWT_SECRET : process.env.JWT_REFRESH_SECRET;
 
-  const expiresIn = type === 'auth'
-    ? process.env.JWT_EXPIRES
-    : process.env.JWT_REFRESH_EXPIRES;
+  const expiresIn =
+    type === 'auth' ? process.env.JWT_EXPIRES : process.env.JWT_REFRESH_EXPIRES;
 
   const payload = {
     id: userId || uuidv4(),

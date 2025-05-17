@@ -17,7 +17,7 @@ import {
 import cloudinary from '../src/utils/cloudinary.js';
 import prisma from '../src/utils/database.js';
 
-const testPropertyPath = path.resolve(
+const testPropertyImagePath = path.resolve(
   process.env.PROPERTY_DIR_TEST,
   'test-image.jpg'
 );
@@ -175,11 +175,14 @@ describe('POST /api/properties', () => {
       .field('furnished', false)
       .field('offer', true)
       .field('type', 'sale')
-      .attach('images', testPropertyPath);
+      .attach('images', testPropertyImagePath);
 
     expect(result.status).toBe(201);
     expect(result.body.message).toBe('Property created successfully');
 
+    const updatedUser = await getTestUser();
+
+    await removeTestFile(updatedUser.properties[0].images);
     await removeAllTestUsers();
   });
 });
@@ -261,7 +264,7 @@ describe('PATCH /api/properties/:propertyId', () => {
       .set('Content-Type', 'multipart/form-data')
       .field('name', 'test1')
       .field('description', 'test1')
-      .attach('images', testPropertyPath);
+      .attach('images', testPropertyImagePath);
 
     const updatedProperty = await getTestProperty({
       name: result.body.data.name,
@@ -298,7 +301,7 @@ describe('DELETE /api/properties/:propertyId', () => {
     expect(result.body.message).toBe('Permission denied');
   });
 
-  it('should return an error if user id is invalid', async () => {
+  it('should return an error if property id is invalid', async () => {
     const result = await request(app)
       .delete('/api/properties/invalid-id')
       .set('Authorization', `Bearer ${global.adminToken}`);
@@ -319,13 +322,16 @@ describe('DELETE /api/properties/:propertyId', () => {
 
   it('should delete property with removing images', async () => {
     const property = await getTestProperty();
-    const testPropertyPath = path.resolve(
+    const testPropertyImagePath = path.resolve(
       process.env.PROPERTY_DIR_TEST,
       'test-image.jpg'
     );
-    const uploadResult = await cloudinary.uploader.upload(testPropertyPath, {
-      folder: 'properties',
-    });
+    const uploadResult = await cloudinary.uploader.upload(
+      testPropertyImagePath,
+      {
+        folder: 'properties',
+      }
+    );
 
     await updateTestProperty({
       images: [uploadResult.secure_url],
@@ -339,6 +345,100 @@ describe('DELETE /api/properties/:propertyId', () => {
 
     expect(result.status).toBe(200);
     expect(result.body.message).toBe('Property deleted successfully');
+    expect(imagesExist).toBe(false);
+  });
+});
+
+describe('POST /api/properties/:propertyId/images', () => {
+  it('should upload property images', async () => {
+    await createTestProperty();
+
+    const property = await getTestProperty();
+    const adminToken = createToken('auth', 'admin', property.ownerId);
+    const result = await request(app)
+      .post(`/api/properties/${property.id}/images`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Content-Type', 'multipart/form-data')
+      .attach('images', testPropertyImagePath);
+
+    expect(result.status).toBe(201);
+    expect(result.body.message).toBe('Property images uploaded successfully');
+
+    const updatedProperty = await getTestProperty();
+
+    await removeAllTestProperties();
+    await removeAllTestUsers();
+    await removeTestFile(updatedProperty.images);
+  });
+});
+
+describe('DELETE /api/properties/:propertyId/images', () => {
+  beforeEach(async () => {
+    await createTestProperty();
+  });
+
+  afterEach(async () => {
+    await removeAllTestUsers();
+    await removeAllTestProperties();
+  });
+
+  it('should return an error if user is not owned by current user', async () => {
+    const property = await getTestProperty();
+    const result = await request(app)
+      .delete(`/api/properties/${property.id}/images`)
+      .set('Authorization', `Bearer ${global.userToken}`);
+
+    expect(result.status).toBe(403);
+    expect(result.body.message).toBe('Permission denied');
+  });
+
+  it('should return an error if property id is invalid', async () => {
+    const result = await request(app)
+      .delete('/api/properties/invalid-id/images')
+      .set('Authorization', `Bearer ${global.adminToken}`);
+
+    expect(result.status).toBe(400);
+    expect(result.body.message).toBe('Validation errors');
+    expect(result.body.errors.propertyId).toBeDefined();
+  });
+
+  it('should return an error if property is not found', async () => {
+    const result = await request(app)
+      .delete(`/api/properties/${global.validUUID}/images`)
+      .set('Authorization', `Bearer ${global.adminToken}`);
+
+    expect(result.status).toBe(404);
+    expect(result.body.message).toBe('Property not found');
+  });
+
+  it('should delete property images', async () => {
+    const property = await getTestProperty();
+    const testPropertyImagePath = path.resolve(
+      process.env.PROPERTY_DIR_TEST,
+      'test-image.jpg'
+    );
+    const uploadResult = await cloudinary.uploader.upload(
+      testPropertyImagePath,
+      {
+        folder: 'properties',
+      }
+    );
+
+    await updateTestProperty({
+      images: [uploadResult.secure_url],
+    });
+    const updatedProperty = await getTestProperty();
+    const result = await request(app)
+      .delete(`/api/properties/${property.id}/images`)
+      .set('Authorization', `Bearer ${global.adminToken}`)
+      .send({
+        image: updatedProperty.images[0],
+      });
+
+    const imagesExist = await checkFileExists(updatedProperty.images);
+
+    expect(result.status).toBe(200);
+    expect(result.body.message).toBe('Property image deleted successfully');
     expect(imagesExist).toBe(false);
   });
 });
