@@ -33,7 +33,7 @@ apiRouter.get('/roles', authorize(['admin']), roleController.list);
 apiRouter.post('/roles', authorize(['admin']), roleController.create);
 apiRouter.get('/roles/search', authorize(['admin']), roleController.search);
 apiRouter.get('/roles/:roleId', authorize(['admin']), roleController.show);
-apiRouter.put('/roles/:roleId', authorize(['admin']), roleController.update);
+apiRouter.patch('/roles/:roleId', authorize(['admin']), roleController.update);
 apiRouter.delete('/roles/:roleId', authorize(['admin']), roleController.remove);
 
 // User API
