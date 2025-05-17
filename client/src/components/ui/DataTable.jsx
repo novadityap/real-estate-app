@@ -258,7 +258,6 @@ const DataTable = ({
   });
   const [fetchShowQuery, { data: item }] = lazyShowQuery();
   const [removeMutate, { isLoading: isLoadingRemove }] = removeMutation();
-  let filteredItems = items?.data || [];
   const totalPages = Math.max(items?.meta?.totalPages || 0, 1);
 
   const mergedColumns = [
@@ -360,12 +359,26 @@ const DataTable = ({
     setcurrentPage(0);
   };
 
-  if (entityName === 'user' && Object.keys(currentUser).length > 0) {
-    filteredItems = filteredItems.filter(user => user.id !== currentUser.id);
-  }
+  const filterItem = ({ items, entityName, currentUser }) => {
+    items = items || [];
+
+    if (entityName === 'user' && Object.keys(currentUser).length > 0) {
+      return items.filter(user => user.id !== currentUser.id);
+    }
+
+    if (entityName === 'property' && Object.keys(currentUser).length > 0) {
+      if (currentUser.role === 'admin') {
+        return items.filter(property => property.id !== null);
+      } else {
+        return items.filter(property => property.ownerId === currentUser.id);
+      }
+    }
+
+    return items;
+  };
 
   const table = useReactTable({
-    data: filteredItems,
+    data: filterItem({ items: items?.data, entityName, currentUser }),
     columns: mergedColumns,
     getCoreRowModel: getCoreRowModel(),
     manualFiltering: true,
