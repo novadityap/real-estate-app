@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Button } from '@/components/shadcn/button';
 import { Input } from '@/components/shadcn/input';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
@@ -44,19 +45,18 @@ const Profile = () => {
       username: '',
       email: '',
       password: '',
-    },
+    }
   });
 
   useEffect(() => {
     if (data?.data) {
       form.reset({
-        avatar: data.data.avatar,
         username: data.data.username,
         email: data.data.email,
         password: '',
       });
     }
-  }, [data]);
+  }, [data?.data]);
 
   if (isLoading || isFetching || !data?.data) return <ProfileSkeleton />;
 
@@ -98,7 +98,6 @@ const Profile = () => {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="username"
