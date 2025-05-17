@@ -35,7 +35,9 @@ const PropertyForm = ({
 }) => {
   const [previewImages, setPreviewImages] = useState([]);
   const [images, setImages] = useState([]);
-  const [removeImage] = removeImageMutation();
+  const [removingImageUrl, setRemovingImageUrl] = useState('');
+  const [removeImage, { isLoading: isLoadingRemoveImage }] =
+    removeImageMutation();
   const {
     form: formUpload,
     handleSubmit: handleSubmitUpload,
@@ -43,6 +45,7 @@ const PropertyForm = ({
   } = useFormHandler({
     params: [{ name: 'propertyId', value: initialValues.id }],
     mutation: uploadImageMutation,
+    defaultValues: { images: ''}
   });
   const { form, handleSubmit, isLoading } = useFormHandler({
     formType: 'datatable',
@@ -52,6 +55,7 @@ const PropertyForm = ({
     mutation,
     onComplete,
     defaultValues: {
+      images: '',
       name: initialValues.name ?? '',
       description: initialValues.description ?? '',
       address: initialValues.address ?? '',
@@ -89,8 +93,10 @@ const PropertyForm = ({
 
     URL.revokeObjectURL(removedPreview);
 
+    setRemovingImageUrl(removedPreview);
     setImages(updatedImages);
-    setPreviewImages(updatedPreviews);
+
+    if (isCreate) setPreviewImages(updatedPreviews);
 
     if (!isCreate) {
       removeImage({
@@ -100,7 +106,11 @@ const PropertyForm = ({
         },
       })
         .unwrap()
-        .then(res => toast.success(res.message))
+        .then(res => {
+          setPreviewImages(updatedPreviews);
+          setRemovingImageUrl('');
+          toast.success(res.message);
+        })
         .catch(e => toast.error(e.message));
     }
   };
@@ -156,13 +166,21 @@ const PropertyForm = ({
                     key={index}
                     className="relative w-32 h-32 border rounded overflow-hidden"
                   >
-                    <img
-                      src={src}
-                      alt={`Preview ${index}`}
-                      className="object-cover w-full h-full"
-                    />
+                    {removingImageUrl === src && isLoadingRemoveImage ? (
+                      <div className="absolute top-0 left-0 w-full h-full bg-black/50 flex items-center justify-center">
+                        <TbLoader className="animate-spin" />
+                      </div>
+                    ) : (
+                      <img
+                        src={src}
+                        alt={`Preview ${index}`}
+                        className="object-cover w-full h-full"
+                      />
+                    )}
+
                     <button
                       type="button"
+                      disabled={isLoadingRemoveImage}
                       onClick={() => handleRemoveImage(index)}
                       className="absolute top-0 right-0 bg-red-500 text-white text-xs px-2 py-1 opacity-80 hover:opacity-100"
                     >

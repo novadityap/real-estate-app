@@ -15,29 +15,52 @@ const useFormHandler = ({
   const { currentUser } = useSelector(state => state.auth);
   const [message, setMessage] = useState('');
   const [mutate, { isLoading, isError, error, isSuccess }] = mutation();
-  const { handleSubmit, ...form } = useForm({ defaultValues });
+  const {
+    handleSubmit,
+    formState: { dirtyFields },
+    ...form
+  } = useForm({ defaultValues });
+
+  const buildPayload = ({ data, changedData = {}, params = [] }) => {
+    let payload = {};
+
+    if (params.length > 0) {
+      const paramPayload = params.reduce((acc, { name, value }) => {
+        if (name && value !== undefined) acc[name] = value;
+        return acc;
+      }, {});
+
+      payload = {
+        data: Object.keys(changedData).length > 0 ? changedData : data,
+        ...paramPayload,
+      };
+
+      return payload;
+    } else {
+      payload = Object.keys(changedData).length > 0 ? changedData : data;
+      return payload;
+    }
+  };
 
   const onSubmit = async data => {
     try {
-      let payload = {};
-
-      if (params.length > 0) {
-        const paramPayload = params.reduce((acc, { name, value }) => {
-          if (name && value !== undefined) acc[name] = value;
-          return acc;
-        }, {});
-
-        payload = {
-          data,
-          ...paramPayload,
-        };
-      } else {
-        payload = data;
-      }
-
+      const changedData = Object.keys(dirtyFields).reduce((acc, key) => {
+        acc[key] = form.getValues(key);
+        return acc;
+      }, {});
+      const filteredData = Object.fromEntries(
+        Object.entries(data).filter(
+          ([_, v]) =>
+            v !== '' &&
+            v !== null &&
+            v !== undefined &&
+            !(Array.isArray(v) && v.length === 0)
+        )
+      );
+      const payload = buildPayload({ data: filteredData, changedData, params });
       const result = await mutate(payload).unwrap();
 
-      if (result.data?.token) {
+      if (result.data.token) {
         const { token, ...user } = result.data;
         dispatch(setToken(token));
         dispatch(setCurrentUser(user));

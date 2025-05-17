@@ -39,10 +39,11 @@ const UserForm = ({
     mutation,
     onComplete,
     defaultValues: {
+      avatar: '',
       username: initialValues.username ?? '',
       email: initialValues.email ?? '',
       password: '',
-      roleId: initialValues.role?.id ?? '',
+      roleId: initialValues.role.id ?? '',
     },
   });
 
