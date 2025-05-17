@@ -94,20 +94,28 @@ const Footer = () => (
   </footer>
 );
 
-const UserProfile = ({ currentUser }) => (
-  <div className="flex items-center gap-x-2 p-4">
-    <Avatar className="size-14">
-      <AvatarImage src={currentUser.avatar} alt={currentUser.username} />
-      <AvatarFallback>
-        {currentUser.username?.slice(0, 2).toUpperCase()}
-      </AvatarFallback>
-    </Avatar>
-    <div className="flex flex-col text-gray-200">
-      <span className="capitalize font-semibold">{currentUser.username}</span>
-      <span>{currentUser.email}</span>
+const UserProfile = ({ currentUser }) => {
+  return (
+    <div className="flex items-center gap-4 p-4 rounded-xl shadow-sm">
+      <Avatar className="size-14">
+        <AvatarImage src={currentUser.avatar} alt={currentUser.username} />
+        <AvatarFallback>
+          {currentUser.username.charAt(0).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+
+      <div className="flex flex-col">
+        <span className="text-white font-semibold text-lg capitalize leading-tight">
+          {currentUser.username}
+        </span>
+        <span className="text-sm text-muted-foreground truncate max-w-[180px]">
+          {currentUser.email}
+        </span>
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
 
 const Sidebar = ({ isSidebarOpen, ref}) => {
   const { token, currentUser } = useSelector(state => state.auth);

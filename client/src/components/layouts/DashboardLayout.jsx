@@ -8,6 +8,7 @@ import {
   TbApps,
   TbUsersGroup,
   TbUserCog,
+  TbUserEdit,
   TbBuildingEstate
 } from 'react-icons/tb';
 import { cn } from '@/lib/utils';
@@ -30,15 +31,15 @@ const Header = ({ toggleSidebar }) => {
 const Sidebar = ({ isOpen, currentUser, ref}) => {
   const menuItems = [
     { name: 'Home', icon: TbHome, link: '/' },
-    { name: 'Profile', icon: TbUserCog, link: '/dashboard/profile' },
     ...(currentUser.role === 'admin'
       ? [
-          { name: 'Dashboard', icon: TbApps, link: '/dashboard' },
-          { name: 'Users', icon: TbUsersGroup, link: '/dashboard/users' },
-          { name: 'Properties', icon: TbBuildingEstate, link: '/dashboard/properties' },
-          { name: 'Roles', icon: TbUserCog, link: '/dashboard/roles' },
-        ]
+        { name: 'Dashboard', icon: TbApps, link: '/dashboard' },
+        { name: 'Users', icon: TbUsersGroup, link: '/dashboard/users' },
+        { name: 'Properties', icon: TbBuildingEstate, link: '/dashboard/properties' },
+        { name: 'Roles', icon: TbUserCog, link: '/dashboard/roles' },
+      ]
       : []),
+    { name: 'Profile', icon: TbUserEdit, link: '/dashboard/profile' }
   ];
 
   return (
