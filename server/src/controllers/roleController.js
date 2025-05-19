@@ -45,33 +45,24 @@ const search = async (req, res, next) => {
   try {
     const query = validate(searchRoleSchema, req.query);
     const { page, limit, q } = query;
+    const where = {} 
+
+    if (q) {
+      where.OR = [
+        { name: { contains: q, mode: 'insensitive' } },
+      ]
+    }
 
     const [roles, totalRoles] = await prisma.$transaction([
       prisma.role.findMany({
-        where: q
-          ? {
-              name: {
-                contains: q,
-                mode: 'insensitive',
-              },
-            }
-          : undefined,
-        take: limit,
-        skip: (page - 1) * limit,
+        where,
+        take: Number(limit),
+        skip: (Number(page) - 1) * Number(limit),
         orderBy: {
           name: 'asc',
         },
       }),
-      prisma.role.count({
-        where: q
-          ? {
-              name: {
-                contains: q,
-                mode: 'insensitive',
-              },
-            }
-          : undefined,
-      }),
+      prisma.role.count({where}),
     ]);
 
     if (roles.length === 0) {

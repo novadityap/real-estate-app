@@ -150,62 +150,39 @@ const search = async (req, res, next) => {
     const query = validate(searchUserSchema, req.query);
     const { page, limit, q } = query;
 
+    const where = {}
+
+    if (q) {
+      where.OR = [
+        { username: { contains: q, mode: 'insensitive' } },
+        { email: { contains: q, mode: 'insensitive' } },
+        {
+          role: {
+            is: {
+              name: {
+                contains: q,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+      ]
+    }
+
     const [users, totalUsers] = await prisma.$transaction([
       prisma.user.findMany({
-        where: q
-          ? {
-              OR: [
-                { username: { contains: q, mode: 'insensitive' } },
-                { email: { contains: q, mode: 'insensitive' } },
-                {
-                  role: {
-                    is: {
-                      name: {
-                        contains: q,
-                        mode: 'insensitive',
-                      },
-                    },
-                  },
-                },
-              ],
-            }
-          : undefined,
+        where,
         include: {
           role: true,
         },
         orderBy: [
-          {
-            role: {
-              name: 'asc',
-            },
-          },
-          {
-            createdAt: 'desc',
-          },
+          {role: { name: 'asc' }},
+          { createdAt: 'desc'}
         ],
-        take: limit,
-        skip: (page - 1) * limit,
+        take: Number(limit),
+        skip: (Number(page) - 1) * Number(limit),
       }),
-      prisma.user.count({
-        where: q
-          ? {
-              OR: [
-                { username: { contains: q, mode: 'insensitive' } },
-                { email: { contains: q, mode: 'insensitive' } },
-                {
-                  role: {
-                    is: {
-                      name: {
-                        contains: q,
-                        mode: 'insensitive',
-                      },
-                    },
-                  },
-                },
-              ],
-            }
-          : undefined,
-      }),
+      prisma.user.count({where}),
     ]);
 
     if (users.length === 0) {
