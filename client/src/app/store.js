@@ -11,7 +11,6 @@ import {
 } from 'redux-persist';
 import { combineReducers } from 'redux';
 import storage from 'redux-persist/lib/storage';
-import queryReducer from '@/features/querySlice.js';
 import authReducer from '@/features/authSlice.js';
 import authApi from '@/services/authApi.js';
 import propertyApi from "@/services/propertyApi.js";
@@ -36,7 +35,6 @@ const rootReducer = combineReducers({
   [userApi.reducerPath]: userApi.reducer,
   [roleApi.reducerPath]: roleApi.reducer,
   [dashboardApi.reducerPath]: dashboardApi.reducer,
-  query: queryReducer,
   auth: persistReducer(authPersistConfig, authReducer)
 });
 
