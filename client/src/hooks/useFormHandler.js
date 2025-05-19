@@ -60,7 +60,7 @@ const useFormHandler = ({
       const payload = buildPayload({ data: filteredData, changedData, params });
       const result = await mutate(payload).unwrap();
 
-      if (result.data.token) {
+      if (result.data?.token) {
         const { token, ...user } = result.data;
         dispatch(setToken(token));
         dispatch(setCurrentUser(user));
