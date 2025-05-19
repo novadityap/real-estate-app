@@ -52,34 +52,114 @@ const show = async (req, res, next) => {
 const search = async (req, res, next) => {
   try {
     const query = validate(searchPropertySchema, req.query);
-    const { page, limit, q } = query;
+     const { 
+      q, 
+      type, 
+      minPrice, 
+      maxPrice, 
+      minBedroom, 
+      maxBedroom, 
+      minBathroom, 
+      maxBathroom, 
+      offer, 
+      furnished, 
+      parking, 
+      sortBy, 
+      page, 
+      limit
+    } = query;
+
+    const where = {
+      AND: []
+    };
+
+    if (q) {
+      const searchConditions = [
+        { name: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+        { address: { contains: q, mode: 'insensitive' } },
+        { type: { contains: q, mode: 'insensitive' } },
+        { 
+          owner: {
+            OR: [
+              { email: { contains: q, mode: 'insensitive' } }
+            ]
+          }
+        }
+      ];
+
+      if (!isNaN(Number(q))) {
+        searchConditions.push(
+          { regularPrice: { equals: Number(q) } },
+          { discountPrice: { equals: Number(q) } },
+          { bedroom: { equals: Number(q) } },
+          { bathroom: { equals: Number(q) } }
+        );
+      }
+
+      where.AND.push({ OR: searchConditions });
+    }
+
+    if (type) where.AND.push({ type: { equals: type } });
+    if (offer !== undefined) where.AND.push({ offer });
+    if (furnished !== undefined) where.AND.push({ furnished });
+    if (parking !== undefined) where.AND.push({ parking });
+
+    if (minPrice || maxPrice) {
+      const priceFilter = {};
+      
+      if (minPrice) {
+        priceFilter.OR = [
+          { regularPrice: { gte: Number(minPrice) } },
+          { discountPrice: { gte: Number(minPrice) } }
+        ];
+      }
+      
+      if (maxPrice) {
+        priceFilter.OR = [
+          ...(priceFilter.OR || []),
+          { regularPrice: { lte: Number(maxPrice) } },
+          { discountPrice: { lte: Number(maxPrice) } }
+        ];
+      }
+      
+      where.AND.push(priceFilter);
+    }
+
+    if (minBedroom || maxBedroom) {
+      const bedroomFilter = { bedroom: {} };
+      if (minBedroom) bedroomFilter.bedroom.gte = Number(minBedroom);
+      if (maxBedroom) bedroomFilter.bedroom.lte = Number(maxBedroom);
+      where.AND.push(bedroomFilter);
+    }
+
+    if (minBathroom || maxBathroom) {
+      const bathroomFilter = { bathroom: {} };
+      if (minBathroom) bathroomFilter.bathroom.gte = Number(minBathroom);
+      if (maxBathroom) bathroomFilter.bathroom.lte = Number(maxBathroom);
+      where.AND.push(bathroomFilter);
+    }
+
+    let orderBy = { createdAt: 'desc' };
+    if (sortBy === 'oldest') {
+      orderBy = { createdAt: 'asc' };
+    } else if (sortBy === 'latest') {
+      orderBy = { createdAt: 'desc' };
+    } else if (sortBy === 'price_low_to_high') {
+      orderBy = [
+        { regularPrice: 'asc' },
+        { discountPrice: 'asc' }
+      ];
+    } else if (sortBy === 'price_high_to_low') {
+      orderBy = [
+        { regularPrice: 'desc' },
+        { discountPrice: 'desc' }
+      ];
+    }
 
     const [properties, totalProperties] = await prisma.$transaction([
       prisma.property.findMany({
-        where: q
-          ? {
-              OR: [
-                { name: { contains: q, mode: 'insensitive' } },
-                { description: { contains: q, mode: 'insensitive' } },
-                { address: { contains: q, mode: 'insensitive' } },
-                { type: { contains: q, mode: 'insensitive' } },
-                {
-                  owner: {
-                    is: {
-                      username: { contains: q, mode: 'insensitive' },
-                    },
-                  },
-                },
-                {
-                  owner: {
-                    is: {
-                      email: { contains: q, mode: 'insensitive' },
-                    },
-                  },
-                },
-              ],
-            }
-          : undefined,
+        where,
         include: {
           owner: {
             select: {
@@ -89,38 +169,11 @@ const search = async (req, res, next) => {
             },
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        take: limit,
-        skip: (page - 1) * limit,
+        orderBy,
+        take: Number(limit),
+        skip: (Number(page) - 1) * Number(limit),
       }),
-      prisma.property.count({
-        where: q
-          ? {
-              OR: [
-                { name: { contains: q, mode: 'insensitive' } },
-                { description: { contains: q, mode: 'insensitive' } },
-                { address: { contains: q, mode: 'insensitive' } },
-                { type: { contains: q, mode: 'insensitive' } },
-                {
-                  owner: {
-                    is: {
-                      username: { contains: q, mode: 'insensitive' },
-                    },
-                  },
-                },
-                {
-                  owner: {
-                    is: {
-                      email: { contains: q, mode: 'insensitive' },
-                    },
-                  },
-                },
-              ],
-            }
-          : undefined,
-      }),
+      prisma.property.count({ where }),
     ]);
 
     if (properties.length === 0) {
