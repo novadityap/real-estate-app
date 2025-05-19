@@ -49,10 +49,23 @@ const Property = () => {
     columnsHelper.accessor('name', {
       header: 'Name',
       size: 200,
+      cell: info => (
+        <div className="whitespace-normal break-words">{info.getValue()}</div>
+      ),
     }),
     columnsHelper.accessor('description', {
       header: 'Description',
       size: 200,
+      cell: info => (
+        <div className="whitespace-normal break-words">{info.getValue()}</div>
+      ),
+    }),
+    columnsHelper.accessor('address', {
+      header: 'Address',
+      size: 200,
+      cell: info => (
+        <div className="whitespace-normal break-words">{info.getValue()}</div>
+      ),
     }),
     columnsHelper.accessor('regularPrice', {
       header: 'Price',
@@ -97,10 +110,6 @@ const Property = () => {
         if (furnished === false) return <Badge variant="destructive">No</Badge>;
       },
     }),
-    columnsHelper.accessor('address', {
-      header: 'Address',
-      size: 150,
-    }),
     columnsHelper.accessor('type', {
       header: 'Type',
       size: 100,
@@ -112,7 +121,7 @@ const Property = () => {
       <BreadcrumbNav />
       <Card>
         <CardHeader>
-          <CardTitle className="text-gray-600">Properties</CardTitle>
+          <CardTitle className="text-heading">Properties</CardTitle>
           <CardDescription>Manage properties</CardDescription>
         </CardHeader>
         <CardContent>

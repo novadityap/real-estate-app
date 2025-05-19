@@ -22,6 +22,7 @@ import NotFound from '@/pages/public/NotFound';
 import PrivateRoute from '@/routes/PrivateRoute';
 import DashboardEntry from '@/routes/DashboardEntry';
 import Property from '@/pages/private/Property';
+import PropertyDetail from '@/pages/public/PropertyDetail';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -40,6 +41,7 @@ const router = createBrowserRouter(
           path="verify-email/:verificationToken"
           element={<VerifyEmail />}
         />
+        <Route path="properties/:propertyId" element={<PropertyDetail />} />
       </Route>
       <Route element={<PrivateRoute requiredRoles={['admin', 'user']} />}>
         <Route path="dashboard" element={<DashboardLayout />}>
