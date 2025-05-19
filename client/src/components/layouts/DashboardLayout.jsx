@@ -9,7 +9,7 @@ import {
   TbUsersGroup,
   TbUserCog,
   TbUserEdit,
-  TbBuildingEstate
+  TbBuildingEstate,
 } from 'react-icons/tb';
 import { cn } from '@/lib/utils';
 import Brand from '@/components/ui/Brand';
@@ -26,27 +26,31 @@ const Header = ({ toggleSidebar }) => {
       <UserDropdown />
     </header>
   );
-};  
+};
 
-const Sidebar = ({ isOpen, currentUser, ref}) => {
+const Sidebar = ({ isOpen, currentUser, ref }) => {
   const menuItems = [
     { name: 'Home', icon: TbHome, link: '/' },
     ...(currentUser.role === 'admin'
       ? [
-        { name: 'Dashboard', icon: TbApps, link: '/dashboard' },
-        { name: 'Users', icon: TbUsersGroup, link: '/dashboard/users' },
-        { name: 'Properties', icon: TbBuildingEstate, link: '/dashboard/properties' },
-        { name: 'Roles', icon: TbUserCog, link: '/dashboard/roles' },
-      ]
+          { name: 'Dashboard', icon: TbApps, link: '/dashboard' },
+          { name: 'Users', icon: TbUsersGroup, link: '/dashboard/users' },
+          {
+            name: 'Properties',
+            icon: TbBuildingEstate,
+            link: '/dashboard/properties',
+          },
+          { name: 'Roles', icon: TbUserCog, link: '/dashboard/roles' },
+        ]
       : []),
-    { name: 'Profile', icon: TbUserEdit, link: '/dashboard/profile' }
+    { name: 'Profile', icon: TbUserEdit, link: '/dashboard/profile' },
   ];
 
   return (
     <aside
       ref={ref}
       className={cn(
-        'w-64 fixed h-screen inset-y-0 z-30 lg:z-30 bg-gray-900 text-gray-200 flex flex-col transition duration-500 lg:translate-x-0',
+        'w-64 fixed h-screen inset-y-0 z-30 lg:z-30 bg-black flex flex-col transition duration-500 lg:translate-x-0',
         isOpen ? 'translate-x-0' : '-translate-x-full'
       )}
     >

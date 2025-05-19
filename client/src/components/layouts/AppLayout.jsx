@@ -2,9 +2,7 @@ import { Outlet, Link } from 'react-router';
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/shadcn/button';
 import UserDropdown from '@/components/ui/UserDropdown';
-import { Input } from '@/components/shadcn/input';
-import { setSearchTerm } from '@/features/querySlice';
-import { TbSearch, TbX, TbMenu2 } from 'react-icons/tb';
+import { TbMenu2 } from 'react-icons/tb';
 import { cn } from '@/lib/utils';
 import { useDispatch, useSelector } from 'react-redux';
 import { Separator } from '@/components/shadcn/separator';
@@ -20,7 +18,6 @@ import SidebarMenu from '@/components/ui/SidebarMenu';
 
 const Header = ({ onToggleSidebar }) => {
   const dispatch = useDispatch();
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { token } = useSelector(state => state.auth);
 
   return (
@@ -32,31 +29,6 @@ const Header = ({ onToggleSidebar }) => {
               className="size-5 cursor-pointer md:hidden"
               onClick={onToggleSidebar}
             />
-
-            <Input
-              type="text"
-              placeholder="Search"
-              className={cn(
-                'hidden md:block md:w-80 lg:w-96',
-                isSearchOpen && 'block w-72'
-              )}
-              name="search"
-              onChange={e => dispatch(setSearchTerm(e.target.value))}
-            />
-
-            {!isSearchOpen && (
-              <TbSearch
-                className="size-5 cursor-pointer md:hidden"
-                onClick={() => setIsSearchOpen(true)}
-              />
-            )}
-
-            {isSearchOpen && (
-              <TbX
-                className="size-5 cursor-pointer md:hidden"
-                onClick={() => setIsSearchOpen(false)}
-              />
-            )}
           </div>
 
           <div className="hidden md:flex md:items-center md:gap-x-3">
@@ -67,7 +39,7 @@ const Header = ({ onToggleSidebar }) => {
                 <Link to="/signin">
                   <Button
                     variant="ghost"
-                    className="font-semibold text-gray-800"
+                    className="font-semibold text-heading"
                   >
                     Sign In
                   </Button>
@@ -75,7 +47,7 @@ const Header = ({ onToggleSidebar }) => {
               </>
             )}
             <Link to="/" className="md:order-1">
-              <Button variant="ghost" className="font-semibold text-gray-800">
+              <Button variant="ghost" className="font-semibold text-heading">
                 Home
               </Button>
             </Link>
@@ -88,8 +60,8 @@ const Header = ({ onToggleSidebar }) => {
 
 const Footer = () => (
   <footer className="border-t-2 py-6 flex items-center justify-center bg-gray-100 ">
-    <p className="text-center text-sm text-gray-500">
-      &copy; {new Date().getFullYear()} Adit&apos;s Blog. All rights reserved.
+    <p className="text-center text-sm text-body">
+      &copy; {new Date().getFullYear()} Adit&apos;s Estate. All rights reserved.
     </p>
   </footer>
 );
@@ -116,8 +88,7 @@ const UserProfile = ({ currentUser }) => {
   );
 };
 
-
-const Sidebar = ({ isSidebarOpen, ref}) => {
+const Sidebar = ({ isSidebarOpen, ref }) => {
   const { token, currentUser } = useSelector(state => state.auth);
   const { handleSignout } = useSignout();
 
@@ -141,7 +112,7 @@ const Sidebar = ({ isSidebarOpen, ref}) => {
     <aside
       ref={ref}
       className={cn(
-        'w-64 fixed md:hidden z-50 h-screen left-0 top-0 overflow-y-hidden flex flex-col text-gray-200 bg-gray-900 transition-transform duration-300',
+        'w-64 fixed md:hidden z-50 h-screen left-0 top-0 overflow-y-hidden flex flex-col bg-black transition-transform duration-300',
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
       )}
     >
