@@ -31,14 +31,14 @@ import { TbLoader } from 'react-icons/tb';
 
 const Profile = () => {
   const currentUser = useSelector(state => state.auth.currentUser);
-  const { data, isLoading, isFetching } = useShowUserQuery(currentUser.id);
+  const { data: user, isLoading, isFetching } = useShowUserQuery(currentUser.id);
   const {
     form,
     handleSubmit,
     isLoading: isLoadingUpdate,
   } = useFormHandler({
     formType: 'profile',
-    params: [{ name: 'userId', value: data?.data?.id }],
+    params: [{ name: 'userId', value: user?.data?.id }],
     mutation: useUpdateProfileMutation,
     defaultValues: {
       avatar: '',
@@ -49,23 +49,23 @@ const Profile = () => {
   });
 
   useEffect(() => {
-    if (data?.data) {
+    if (user?.data) {
       form.reset({
-        username: data.data.username,
-        email: data.data.email,
+        username: user.data.username,
+        email: user.data.email,
         password: '',
       });
     }
-  }, [data?.data]);
+  }, [user?.data]);
 
-  if (isLoading || isFetching || !data?.data) return <ProfileSkeleton />;
+  if (isLoading || isFetching || !user?.data) return <ProfileSkeleton />;
 
   return (
     <>
       <BreadcrumbNav />
       <Card>
         <CardHeader>
-          <CardTitle className="text-gray-600">Profile</CardTitle>
+          <CardTitle className="text-heading">Profile</CardTitle>
           <CardDescription>Manage your profile</CardDescription>
         </CardHeader>
         <CardContent>
@@ -74,7 +74,7 @@ const Profile = () => {
               <div className="flex justify-center">
                 <Avatar className="size-32">
                   <AvatarImage
-                    src={data?.data?.avatar}
+                    src={user?.data.avatar}
                     fallback={
                       <AvatarFallback>{currentUser.username.charAt(0).toUpperCase()}</AvatarFallback>
                     }
