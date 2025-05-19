@@ -67,7 +67,7 @@ const User = () => {
       <BreadcrumbNav />
       <Card>
         <CardHeader>
-          <CardTitle className="text-gray-600">Users</CardTitle>
+          <CardTitle className="text-heading">Users</CardTitle>
           <CardDescription>Manage users</CardDescription>
         </CardHeader>
         <CardContent>

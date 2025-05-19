@@ -38,7 +38,7 @@ const Signup = () => {
   return (
     <Card className="w-full sm:w-[450px] my-10">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-gray-600">
+        <CardTitle className="text-2xl font-bold text-heading">
           Sign Up
         </CardTitle>
       </CardHeader>
@@ -110,17 +110,17 @@ const Signup = () => {
       </CardContent>
       <CardFooter className="flex flex-col items-center">
         <div className="flex items-center justify-betweens gap-1">
-          <p className="text-gray-500 text-sm">Have an account?</p>
+          <p className="text-body text-sm">Have an account?</p>
           <Link
             to="/signin"
-            className="text-sm text-gray-500 hover:underline hover:text-blue-600"
+            className="text-sm text-body hover:underline hover:text-blue-600"
           >
             Sign In
           </Link>
         </div>
         <Link
           to="/request-reset-password"
-          className="text-sm text-gray-500 hover:underline hover:text-blue-600"
+          className="text-sm text-body hover:underline hover:text-blue-600"
         >
           Forgot Password?
         </Link>

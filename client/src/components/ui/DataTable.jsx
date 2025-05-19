@@ -150,12 +150,10 @@ const TableWrapper = ({ table }) => {
         {getHeaderGroups().map(headerGroup => (
           <TableRow
             key={headerGroup.id}
-            className="bg-gray-600 hover:bg-gray-600"
           >
             {headerGroup.headers.map(header => (
               <TableHead
                 key={header.id}
-                className="text-gray-50 font-bold border-x-2"
                 style={{
                   width: header.column.columnDef.size,
                   minWidth: header.column.columnDef.size,
@@ -186,7 +184,7 @@ const TableWrapper = ({ table }) => {
         ) : (
           <>
             {getRowModel().rows.map(row => (
-              <TableRow key={row.id} className="hover:bg-gray-200/80">
+              <TableRow key={row.id}>
                 {row.getVisibleCells().map(cell => (
                   <TableCell
                     key={cell.id}

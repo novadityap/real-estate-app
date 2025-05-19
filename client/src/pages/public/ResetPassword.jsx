@@ -40,7 +40,7 @@ const ResetPassword = () => {
   return (
     <Card className="w-full sm:w-[450px]">
       <CardHeader>
-        <CardTitle className="text-gray-600">Reset Password</CardTitle>
+        <CardTitle className="text-heading">Reset Password</CardTitle>
         <CardDescription>
           Enter your new password. Make sure it&apos;s at least 6 characters
           long

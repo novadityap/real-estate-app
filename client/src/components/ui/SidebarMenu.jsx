@@ -2,7 +2,7 @@ import { NavLink } from 'react-router';
 import { cn } from '@/lib/utils';
 
 const SidebarMenu = ({ menuItems }) => (
-  <ul className="space-y-1 px-4 mt-4 text-gray-200">
+  <ul className="space-y-1 px-4 mt-4 text-white font-semibold">
     {menuItems.map(({ name, icon: Icon, link, component, action }, index) => (
       <li key={index}>
         {link ? (

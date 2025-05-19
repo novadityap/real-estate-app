@@ -16,9 +16,9 @@ const Unauthorized = () => {
             Unauthorized Access
           </CardTitle>
         </CardHeader>
-        <CardContent className="text-center text-gray-600">
+        <CardContent className="text-center text-body">
           <p>You don&apos;t have permission to view this page.</p>
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-body">
             Please contact your administrator if you believe this is an error.
           </p>
         </CardContent>

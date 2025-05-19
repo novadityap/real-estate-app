@@ -47,14 +47,14 @@ const Signin = () => {
     return (
       <Card className="w-full sm:w-[450px]">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-gray-600">
+          <CardTitle className="text-2xl font-bold text-heading">
             Sign In
           </CardTitle>
         </CardHeader>
         <CardContent>
           {error?.code === 401 && (
             <Alert variant="destructive">
-              <TbExclamationCircle className="size-5 text-red-500" />
+              <TbExclamationCircle className="size-5 text-destructive" />
               <AlertTitle>Something went wrong</AlertTitle>
               <AlertDescription>{message}</AlertDescription>
             </Alert>
@@ -106,19 +106,19 @@ const Signin = () => {
         </CardContent>
         <CardFooter className="flex flex-col items-center">
           <div className="flex items-center justify-betweens gap-2">
-            <p className="text-gray-500 text-sm">
+            <p className="text-body text-sm">
               Don&apos;t have an account?
             </p>
             <Link
               to="/signup"
-              className="text-sm text-gray-500 hover:underline hover:text-blue-600"
+              className="text-sm text-body hover:underline hover:text-blue-600"
             >
               Sign Up
             </Link>
           </div>
           <Link
             to="/request-reset-password"
-            className="text-sm text-gray-500 hover:underline hover:text-blue-600"
+            className="text-sm text-body hover:underline hover:text-blue-600"
           >
             Forgot Password?
           </Link>

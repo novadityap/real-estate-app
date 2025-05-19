@@ -15,12 +15,12 @@ const NotFound = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-lg p-6 shadow-md">
         <CardHeader>
-          <h1 className="text-4xl font-bold text-gray-800">
+          <h1 className="text-4xl font-bold text-heading">
             404 - Page Not Found
           </h1>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600 mt-4">
+          <p className="text-body mt-4">
             Oops! The page you&apos;re looking for doesn&apos;t exist. It might
             have been moved or deleted.
           </p>

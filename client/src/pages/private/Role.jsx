@@ -31,7 +31,7 @@ const Role = () => {
       <BreadcrumbNav />
       <Card>
         <CardHeader>
-          <CardTitle className="text-gray-600">Roles</CardTitle>
+          <CardTitle className="text-heading">Roles</CardTitle>
           <CardDescription>Manage roles</CardDescription>
         </CardHeader>
         <CardContent>

@@ -35,7 +35,7 @@ const ResendVerification = () => {
   return (
     <Card className="w-full sm:w-[450px]">
       <CardHeader>
-        <CardTitle className="text-gray-600">Resend Email Verification</CardTitle>
+        <CardTitle className="text-heading">Resend Email Verification</CardTitle>
         <CardDescription>
           Please enter your email and we will send you a verification link
         </CardDescription>

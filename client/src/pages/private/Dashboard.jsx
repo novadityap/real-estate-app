@@ -14,12 +14,12 @@ import { cn } from '@/lib/utils';
 const StatCard = ({ title, value }) => (
   <Card className="hover:shadow-xl transition-shadow">
     <CardHeader>
-      <CardTitle className="text-lg font-semibold text-gray-600">
+      <CardTitle className="text-lg font-semibold text-heading">
         {title}
       </CardTitle>
       <CardDescription
         className={cn('text-2xl font-semibold', {
-          'text-gray-600': value == null,
+          'text-body': value == null,
         })}
       >
         {value ?? 'No data available'}
@@ -31,15 +31,15 @@ const StatCard = ({ title, value }) => (
 const RecentItemsCard = ({ title, items, link, formatter }) => (
   <Card className="hover:shadow-xl transition-shadow">
     <CardHeader>
-      <CardTitle className="text-xl font-semibold text-gray-800">
+      <CardTitle className="text-xl font-semibold text-heading">
         {title}
       </CardTitle>
     </CardHeader>
     <CardContent>
       {items?.length ? (
-        <ul className="space-y-2 text-gray-700">{items.map(formatter)}</ul>
+        <ul className="space-y-2 text-body">{items.map(formatter)}</ul>
       ) : (
-        <p className="text-gray-600 italic">
+        <p className="text-body italic">
           No {title.split(' ')[1]?.toLowerCase()} available.
         </p>
       )}
@@ -66,8 +66,8 @@ const Dashboard = () => {
       <BreadcrumbNav />
       <Card>
         <CardHeader>
-          <CardTitle className="text-gray-600 text-2xl">Dashboard</CardTitle>
-          <CardDescription className="text-gray-500">
+          <CardTitle className="text-heading text-2xl">Dashboard</CardTitle>
+          <CardDescription className="text-body">
             Overview of your dashboard
           </CardDescription>
         </CardHeader>
@@ -106,7 +106,7 @@ const Dashboard = () => {
                 >
                   {property.name}
                 </Link>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-body">
                   {new Date(property.createdAt).toLocaleDateString()}
                 </span>
               </li>
