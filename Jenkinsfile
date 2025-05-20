@@ -51,9 +51,6 @@ pipeline {
         dir('server') {
           sh '''
             cp /var/jenkins_home/env/.env.server.realestate .env
-            set -a
-            . .env
-            set +a
             npm run test
           '''
         }
