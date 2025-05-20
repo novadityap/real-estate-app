@@ -2,6 +2,10 @@ pipeline {
 
   agent any
 
+  tools {
+    nodejs 'node:22'
+  }
+
   environment {
     DOCKER_IMAGE = 'novadityap/real-estate-server'
   }
