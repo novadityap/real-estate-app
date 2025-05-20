@@ -49,6 +49,7 @@ const PropertyForm = ({
   });
   const { form, handleSubmit, isLoading } = useFormHandler({
     formType: 'datatable',
+    isCreate,
     ...(!isCreate && {
       params: [{ name: 'propertyId', value: initialValues.id }],
     }),

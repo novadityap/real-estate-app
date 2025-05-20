@@ -35,6 +35,7 @@ const UserForm = ({
   const [fetchRoles, { data: roles }] = useLazyListRolesQuery();
   const { form, handleSubmit, isLoading } = useFormHandler({
     formType: 'datatable',
+    isCreate,
     ...(!isCreate && { params: [{ name: 'userId', value: initialValues.id }] }),
     mutation,
     onComplete,

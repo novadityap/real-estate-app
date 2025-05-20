@@ -10,6 +10,7 @@ const useFormHandler = ({
   defaultValues,
   formType,
   onComplete,
+  isCreate = true,
 }) => {
   const dispatch = useDispatch();
   const { currentUser } = useSelector(state => state.auth);
@@ -44,17 +45,17 @@ const useFormHandler = ({
 
   const onSubmit = async data => {
     try {
-      const changedData = Object.keys(dirtyFields).reduce((acc, key) => {
+      const changedData = !isCreate ? Object.keys(dirtyFields).reduce((acc, key) => {
         acc[key] = form.getValues(key);
         return acc;
-      }, {});
+      }, {}) : {};
       const filteredData = Object.fromEntries(
         Object.entries(data).filter(
           ([_, v]) =>
             v !== '' &&
-            v !== null &&
-            v !== undefined &&
-            !(Array.isArray(v) && v.length === 0)
+          v !== null &&
+          v !== undefined &&
+          !(Array.isArray(v) && v.length === 0)
         )
       );
       const payload = buildPayload({ data: filteredData, changedData, params });
