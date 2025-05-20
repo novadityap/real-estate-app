@@ -10,6 +10,8 @@ pipeline {
    environment {
     DOCKER_IMAGE = 'novadityap/real-estate-server'
     DOCKER_HOST = 'tcp://docker:2376'
+    DOCKER_CERT_PATH=/certs/client 
+    DOCKER_TLS_VERIFY=1 
   }
 
 
