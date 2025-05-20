@@ -9,6 +9,7 @@ pipeline {
 
    environment {
     DOCKER_IMAGE = 'novadityap/real-estate-server'
+    DOCKER_HOST = 'tcp://docker:2376'
   }
 
 
