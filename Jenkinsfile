@@ -3,7 +3,7 @@ pipeline {
   agent {
     docker {
       image 'node:22-alpine'
-      args '--network jenkins -v /jenkins-data:/var/jenkins_home -v /var/run/docker.sock:/var/run/docker.sock'
+      args '-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v jenkins-data:/var/jenkins_home'
     }
   }
 
