@@ -3,15 +3,12 @@ pipeline {
   agent {
     docker {
       image 'node:22-alpine'
-      args '-v /var/jenkins_home:/var/jenkins_home'
+      args '--network jenkins -v /jenkins-data:/var/jenkins_home -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
 
    environment {
     DOCKER_IMAGE = 'novadityap/real-estate-server'
-    DOCKER_HOST = 'tcp://docker:2376'
-    DOCKER_CERT_PATH=/certs/client 
-    DOCKER_TLS_VERIFY=1 
   }
 
 
@@ -35,7 +32,7 @@ pipeline {
       steps {
          dir('client') {
           sh '''
-            cp ../.env .env
+            cp ../.env.client .env
             npm install
             npm run build
           '''
@@ -80,20 +77,6 @@ pipeline {
             echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
             docker push $DOCKER_IMAGE
           '''
-        }
-      }
-    }
-
-    stage('Deploy to Railway') {
-      steps {
-        withCredentials([string(credentialsId: 'railway-token', variable: 'RAILWAY_TOKEN')]) {
-          dir('server') {
-            sh '''
-              npm install -g railway
-              echo "$RAILWAY_TOKEN" | railway login --token
-              railway up --service server
-            '''
-          }
         }
       }
     }
