@@ -7,6 +7,11 @@ pipeline {
     }
   }
 
+   environment {
+    DOCKER_IMAGE = 'novadityap/real-estate-server'
+  }
+
+
   stages {
     stage('Checkout') {
       steps {
@@ -53,6 +58,39 @@ pipeline {
             set +a
             npm run test
           '''
+        }
+      }
+    }
+
+    stage('Build Docker image') {
+      steps {
+        dir('server') {
+          sh 'docker build -t $DOCKER_IMAGE .'
+        }
+      }
+    }
+
+    stage('Push Docker image') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          sh '''
+            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+            docker push $DOCKER_IMAGE
+          '''
+        }
+      }
+    }
+
+    stage('Deploy to Railway') {
+      steps {
+        withCredentials([string(credentialsId: 'railway-token', variable: 'RAILWAY_TOKEN')]) {
+          dir('server') {
+            sh '''
+              npm install -g railway
+              echo "$RAILWAY_TOKEN" | railway login --token
+              railway up --service server
+            '''
+          }
         }
       }
     }
