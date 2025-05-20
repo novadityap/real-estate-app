@@ -1,16 +1,10 @@
 pipeline {
 
-  agent {
-    docker {
-      image 'node:22-alpine'
-      args '-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v jenkins-data:/var/jenkins_home'
-    }
-  }
+  agent any
 
-   environment {
+  environment {
     DOCKER_IMAGE = 'novadityap/real-estate-server'
   }
-
 
   stages {
     stage('Checkout') {
