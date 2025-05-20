@@ -1,13 +1,8 @@
 pipeline {
 
-  agent {
-    docker {
-      image 'node:22-alpine'
-      args '-v /var/jenkins_home:/var/jenkins_home'
-    }
-  }
+  agent any
 
-   environment {
+  environment {
     DOCKER_IMAGE = 'novadityap/real-estate-server'
   }
 
