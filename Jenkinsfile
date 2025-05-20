@@ -17,20 +17,11 @@ pipeline {
       }
     }
 
-    stage('Prepare environment files') {
-      steps {
-        script {
-          def clientEnv = readProperties file: '/var/jenkins_home/env/.env.client.realestate'
-          writeFile file: '.env.client', text: clientEnv.collect { k, v -> "${k}=${v}" }.join('\n')
-        }
-      }
-    }
-
     stage('Install client dependencies and build') {
       steps {
          dir('client') {
           sh '''
-            cp ../.env.client .env
+            cp /var/jenkins_home/env/.env.client.realestate .env
             npm install
             npm run build
           '''
@@ -57,7 +48,7 @@ pipeline {
       }
     }
 
-    stage('Build Docker image') {
+    stage('Build server docker image') {
       steps {
         dir('server') {
           sh 'docker build -t $DOCKER_IMAGE .'
@@ -65,7 +56,7 @@ pipeline {
       }
     }
 
-    stage('Push Docker image') {
+    stage('Push server docker image') {
       steps {
         withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           sh '''
