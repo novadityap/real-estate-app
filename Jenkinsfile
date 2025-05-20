@@ -52,7 +52,7 @@ pipeline {
           sh '''
             cp /var/jenkins_home/env/.env.server.realestate .env
             set -a
-            source .env
+            . .env
             set +a
             npm run test
           '''
