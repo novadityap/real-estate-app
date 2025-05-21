@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { setToken, setCurrentUser } from '@/features/authSlice';
+import { useDispatch } from 'react-redux';
+import { setToken, setCurrentUser, updateCurrentUser } from '@/features/authSlice';
 import { toast } from 'react-hot-toast';
 
 const useFormHandler = ({
@@ -13,7 +13,6 @@ const useFormHandler = ({
   isCreate = true,
 }) => {
   const dispatch = useDispatch();
-  const { currentUser } = useSelector(state => state.auth);
   const [message, setMessage] = useState('');
   const [mutate, { isLoading, isError, error, isSuccess }] = mutation();
   const {
@@ -49,6 +48,7 @@ const useFormHandler = ({
         acc[key] = form.getValues(key);
         return acc;
       }, {}) : {};
+
       const filteredData = Object.fromEntries(
         Object.entries(data).filter(
           ([_, v]) =>
@@ -58,17 +58,17 @@ const useFormHandler = ({
           !(Array.isArray(v) && v.length === 0)
         )
       );
+
       const payload = buildPayload({ data: filteredData, changedData, params });
       const result = await mutate(payload).unwrap();
 
-      if (result.data?.token) {
-        const { token, ...user } = result.data;
-        dispatch(setToken(token));
-        dispatch(setCurrentUser(user));
+      if (formType === 'signin') {
+        dispatch(setToken(result.data.token));
+        dispatch(setCurrentUser(result.data));
       }
 
-      if (formType === 'profile' && currentUser.id === result.data.id) {
-        dispatch(setCurrentUser(result.data));
+      if (formType === 'profile') {
+        dispatch(updateCurrentUser(result.data));
       }
 
       if (formType === 'datatable' && onComplete) {

@@ -19,10 +19,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/shadcn/card';
-import { useSelector } from 'react-redux';
 
 const Property = () => {
-  const { currentUser } = useSelector(state => state.auth);
   const columnsHelper = createColumnHelper();
   const columns = [
     columnsHelper.accessor('images', {
@@ -136,7 +134,6 @@ const Property = () => {
             removeImageMutation={useRemovePropertyImageMutation}
             FormComponent={PropertyForm}
             entityName="property"
-            currentUser={currentUser}
             allowFileUpload={true}
           />
         </CardContent>

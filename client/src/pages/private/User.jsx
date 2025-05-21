@@ -22,10 +22,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/shadcn/card';
-import {useSelector} from 'react-redux';
 
 const User = () => {
-  const { currentUser } = useSelector(state => state.auth);
   const columnsHelper = createColumnHelper();
   const columns = [
     columnsHelper.accessor('avatar', {
@@ -80,7 +78,6 @@ const User = () => {
             removeMutation={useRemoveUserMutation}
             FormComponent={UserForm}
             entityName="user"
-            currentUser={currentUser}
           />
         </CardContent>
       </Card>

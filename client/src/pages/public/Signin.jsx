@@ -33,6 +33,7 @@ const Signin = () => {
   const { form, handleSubmit, isLoading, error, isSuccess, message } =
     useFormHandler({
       mutation: useSigninMutation,
+      formType: 'signin',
       defaultValues: { 
         email: '', 
         password: '' 

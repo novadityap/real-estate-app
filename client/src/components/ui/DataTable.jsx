@@ -37,6 +37,7 @@ import {
 import dayjs from 'dayjs';
 import ReactPaginate from 'react-paginate';
 import { cn } from '@/lib/utils';
+import { useSelector } from 'react-redux';
 
 const Pagination = ({ pageCount, onPageChange, currentPage, forcePage }) => (
   <ReactPaginate
@@ -234,9 +235,9 @@ const DataTable = ({
   allowUpdate = true,
   allowFileUpload = false,
   entityName,
-  currentUser = {},
 }) => {
   const columnsHelper = createColumnHelper();
+  const { currentUser } = useSelector(state => state.auth);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setcurrentPage] = useState(0);
   const [limit, setLimit] = useState(10);
@@ -357,16 +358,14 @@ const DataTable = ({
     setcurrentPage(0);
   };
 
-  const filterItem = ({ items, entityName, currentUser }) => {
-    items = items || [];
-
-    if (entityName === 'user' && Object.keys(currentUser).length > 0) {
+  const filterItem = ({ items = [], entityName, currentUser }) => {
+    if (entityName === 'user') {
       return items.filter(user => user.id !== currentUser.id);
     }
 
-    if (entityName === 'property' && Object.keys(currentUser).length > 0) {
+    if (entityName === 'property') {
       if (currentUser.role === 'admin') {
-        return items.filter(property => property.id !== null);
+        return items;
       } else {
         return items.filter(property => property.ownerId === currentUser.id);
       }

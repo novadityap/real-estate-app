@@ -127,6 +127,9 @@ const updateProfile = async (req, res, next) => {
         id: userId,
       },
       data: fields,
+      include: {
+        role: true,
+      }
     });
 
     logger.info('profile updated successfully');
@@ -138,6 +141,7 @@ const updateProfile = async (req, res, next) => {
         username: updatedUser.username,
         email: updatedUser.email,
         avatar: updatedUser.avatar,
+        role: updatedUser.role.name
       },
     });
   } catch (e) {
