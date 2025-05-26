@@ -30,6 +30,7 @@ import {
   TbParkingCircle,
   TbArmchair,
   TbX,
+  TbLoader,
 } from 'react-icons/tb';
 import { Label } from '@/components/shadcn/label';
 import InfiniteScroll from 'react-infinite-scroll-component';
@@ -426,13 +427,9 @@ const Home = () => {
 
   useEffect(() => {
     if (data?.data) {
-      setProperties(prev => {
-        const newData = data.data.filter(
-          newItem => !prev.some(item => item.id === newItem.id)
-        );
-        return currentPage === 1 ? data.data : [...prev, ...newData];
-      });
-
+      setProperties(prev =>
+        currentPage === 1 ? data.data : [...prev, ...data.data]
+      );
       setHasMore(data.data.length >= 10);
     }
   }, [data, currentPage]);
@@ -450,25 +447,17 @@ const Home = () => {
   return (
     <div className="self-start w-full px-4 md:px-8 py-6 space-y-6">
       <PropertyFilter onChange={setFilters} />
-
-      {isError && (
-        <p className="text-red-500 text-center">
-          Failed to load properties. Please try again.
-        </p>
-      )}
-
       <InfiniteScroll
         dataLength={properties.length}
         next={fetchMoreData}
         hasMore={hasMore && !isError}
-        loader={<PropertySkeleton count={2} />}
-        scrollThreshold={0.9}
+        loader={
+          <TbLoader className="animate-spin text-gray-500 mx-auto mt-4" />
+        }
         endMessage={
-          properties.length > 0 && (
-            <p className="text-center text-gray-500 mt-4">
-              You've seen all properties
-            </p>
-          )
+          <p className="text-center text-gray-500 mt-4">
+            You&apos;ve seen all properties
+          </p>
         }
       >
         <div className="space-y-6">
