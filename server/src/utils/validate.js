@@ -11,7 +11,6 @@ const validate = (schema, body) => {
   if (result.error) {
     const errors = formatError(result.error.details);
 
-    logger.warn('validation errors');
     throw new ResponseError('Validation errors', 400, errors);
   }
 

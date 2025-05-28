@@ -21,7 +21,6 @@ const create = async (req, res, next) => {
       })) > 0;
 
     if (isNameTaken) {
-      logger.warn('resource already in use');
       throw new ResponseError('Resource already in use', 409, {
         name: 'Name already in use',
       });
@@ -130,10 +129,7 @@ const show = async (req, res, next) => {
       },
     });
 
-    if (!role) {
-      logger.warn('role not found');
-      throw new ResponseError('Role not found', 404);
-    }
+    if (!role) throw new ResponseError('Role not found', 404);
 
     logger.info('role retrieved successfully');
     res.json({
@@ -157,10 +153,7 @@ const update = async (req, res, next) => {
       },
     });
 
-    if (!role) {
-      logger.warn('role not found');
-      throw new ResponseError('Role not found', 404);
-    }
+    if (!role) throw new ResponseError('Role not found', 404);
 
     if (fields.name && fields.name != role.name) {
       const isNameTaken =
@@ -171,7 +164,6 @@ const update = async (req, res, next) => {
         })) > 0;
 
       if (isNameTaken) {
-        logger.warn('resource already in use');
         throw new ResponseError('Resource already in use', 409, {
           name: 'Name already in use',
         });
@@ -206,10 +198,7 @@ const remove = async (req, res, next) => {
       },
     });
 
-    if (!role) {
-      logger.warn('role not found');
-      throw new ResponseError('Role not found', 404);
-    }
+    if (!role) throw new ResponseError('Role not found', 404);
 
     await prisma.role.delete({
       where: {

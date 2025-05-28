@@ -33,10 +33,7 @@ const show = async (req, res, next) => {
       },
     });
 
-    if (!property) {
-      logger.warn('property not found');
-      throw new ResponseError('Property not found', 404);
-    }
+    if (!property) throw new ResponseError('Property not found', 404);
 
     logger.info('Property retrieved successfully');
     res.json({
@@ -257,10 +254,7 @@ const update = async (req, res, next) => {
       },
     });
 
-    if (!property) {
-      logger.warn('property not found');
-      throw new ResponseError('Property not found', 404);
-    }
+    if (!property) throw new ResponseError('Property not found', 404);
 
     const { files, fields } = await uploadFile(req, {
       fieldname: 'images',
@@ -317,10 +311,7 @@ const remove = async (req, res, next) => {
       },
     });
 
-    if (!property) {
-      logger.warn('property not found');
-      throw new ResponseError('Property not found', 404);
-    }
+    if (!property) throw new ResponseError('Property not found', 404);
 
     for (const image of property.images) {
       await cloudinary.uploader.destroy(extractPublicId(image));
@@ -360,10 +351,7 @@ const uploadImage = async (req, res, next) => {
       },
     });
 
-    if (!property) {
-      logger.warn('property not found');
-      throw new ResponseError('Property not found', 404);
-    }
+    if (!property) throw new ResponseError('Property not found', 404);
 
     const existingFileCount = property.images.length;
 
@@ -415,10 +403,7 @@ const removeImage = async (req, res, next) => {
       },
     });
 
-    if (!property) {
-      logger.warn('property not found');
-      throw new ResponseError('Property not found', 404);
-    }
+    if (!property) throw new ResponseError('Property not found', 404);
 
     if (!property.images.includes(fields.image)) {
       throw new ResponseError('Image not found in this property', 404);

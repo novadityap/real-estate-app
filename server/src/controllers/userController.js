@@ -34,10 +34,7 @@ const show = async (req, res, next) => {
       },
     });
 
-    if (!user) {
-      logger.warn('user not found');
-      throw new ResponseError('User not found', 404);
-    }
+    if (!user) throw new ResponseError('User not found', 404);
 
     logger.info('user retrieved successfully');
     res.json({
@@ -66,10 +63,7 @@ const updateProfile = async (req, res, next) => {
       },
     });
 
-    if (!user) {
-      logger.warn('user not found');
-      throw new ResponseError('User not found', 404);
-    }
+    if (!user) throw new ResponseError('User not found', 404);
 
     const { files, fields } = await uploadFile(req, {
       fieldname: 'avatar',
@@ -87,7 +81,6 @@ const updateProfile = async (req, res, next) => {
         })) > 0;
 
       if (isUsernameTaken) {
-        logger.warn('resource already in use');
         throw new ResponseError('Resource already in use', 409, {
           username: 'Username already in use',
         });
@@ -104,7 +97,6 @@ const updateProfile = async (req, res, next) => {
         })) > 0;
 
       if (isEmailTaken) {
-        logger.warn('resource already in use');
         throw new ResponseError('Resource already in use', 409, {
           email: 'Email already in use',
         });
@@ -237,7 +229,6 @@ const create = async (req, res, next) => {
         field.charAt(0).toUpperCase() + field.slice(1)
       }`;
 
-      logger.warn('resource already in use');
       throw new ResponseError('Resource already in use', 409, {
         [field]: `${capitalizedField} already in use`,
       });
@@ -250,7 +241,6 @@ const create = async (req, res, next) => {
     });
 
     if (!role) {
-      logger.warn('validation errors');
       throw new ResponseError('Validation errors', 400, {
         roles: 'Invalid role id',
       });
@@ -297,10 +287,7 @@ const update = async (req, res, next) => {
       },
     });
 
-    if (!user) {
-      logger.warn('user not found');
-      throw new ResponseError('User not found', 404);
-    }
+    if (!user) throw new ResponseError('User not found', 404);
 
     const { files, fields } = await uploadFile(req, {
       fieldname: 'avatar',
@@ -318,7 +305,6 @@ const update = async (req, res, next) => {
         })) > 0;
 
       if (isUsernameTaken) {
-        logger.warn('resource already in use');
         throw new ResponseError('Resource already in use', 409, {
           username: 'Username already in use',
         });
@@ -335,7 +321,6 @@ const update = async (req, res, next) => {
         })) > 0;
 
       if (isEmailTaken) {
-        logger.warn('resource already in use');
         throw new ResponseError('Resource already in use', 409, {
           email: 'Email already in use',
         });
@@ -350,7 +335,6 @@ const update = async (req, res, next) => {
       });
 
       if (!role) {
-        logger.warn('validation errors');
         throw new ResponseError('Validation errors', 400, {
           roles: 'Invalid role id',
         });
@@ -402,10 +386,7 @@ const remove = async (req, res, next) => {
       },
     });
 
-    if (!user) {
-      logger.warn('user not found');
-      throw new ResponseError('User not found', 404);
-    }
+    if (!user) throw new ResponseError('User not found', 404);
 
     const properties = await prisma.property.findMany({
       where: {
