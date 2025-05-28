@@ -20,35 +20,33 @@ apiRouter.post('/auth/reset-password/:resetToken', authController.resetPassword)
 apiRouter.get('/properties/search', propertyController.search);
 apiRouter.get('/properties/:propertyId', propertyController.show);
 
-apiRouter.use(authenticate);
-
 // Auth API
-apiRouter.post('/auth/signout', authController.signout);
+apiRouter.post('/auth/signout', authenticate, authController.signout);
 
 // Dashboard API
-apiRouter.get('/dashboard', authorize(['admin']), dashboardController.stats);
+apiRouter.get('/dashboard', authenticate, authorize(['admin']), dashboardController.stats);
 
 // Role API
-apiRouter.get('/roles', authorize(['admin']), roleController.list);
-apiRouter.post('/roles', authorize(['admin']), roleController.create);
-apiRouter.get('/roles/search', authorize(['admin']), roleController.search);
-apiRouter.get('/roles/:roleId', authorize(['admin']), roleController.show);
-apiRouter.patch('/roles/:roleId', authorize(['admin']), roleController.update);
-apiRouter.delete('/roles/:roleId', authorize(['admin']), roleController.remove);
+apiRouter.get('/roles', authenticate, authorize(['admin']), roleController.list);
+apiRouter.post('/roles', authenticate, authorize(['admin']), roleController.create);
+apiRouter.get('/roles/search', authenticate, authorize(['admin']), roleController.search);
+apiRouter.get('/roles/:roleId', authenticate, authorize(['admin']), roleController.show);
+apiRouter.patch('/roles/:roleId', authenticate, authorize(['admin']), roleController.update);
+apiRouter.delete('/roles/:roleId', authenticate, authorize(['admin']), roleController.remove);
 
 // User API
-apiRouter.get('/users/search', authorize(['admin']), userController.search);
-apiRouter.post('/users', authorize(['admin']), userController.create);
-apiRouter.get('/users/:userId', authorize(['admin', 'user']), userController.show);
-apiRouter.patch('/users/:userId', authorize(['admin']), userController.update);
-apiRouter.patch('/users/:userId/profile', authorize(['admin', 'user']), userController.updateProfile);
-apiRouter.delete('/users/:userId', authorize(['admin', 'user']), userController.remove);
+apiRouter.get('/users/search', authenticate, authorize(['admin']), userController.search);
+apiRouter.post('/users', authenticate, authorize(['admin']), userController.create);
+apiRouter.get('/users/:userId', authenticate, authorize(['admin', 'user']), userController.show);
+apiRouter.patch('/users/:userId', authenticate, authorize(['admin']), userController.update);
+apiRouter.patch('/users/:userId/profile', authenticate, authorize(['admin', 'user']), userController.updateProfile);
+apiRouter.delete('/users/:userId', authenticate, authorize(['admin', 'user']), userController.remove);
 
 // Property API
-apiRouter.post('/properties', authorize(['admin', 'user']), propertyController.create);
-apiRouter.patch('/properties/:propertyId', authorize(['admin', 'user']), propertyController.update);
-apiRouter.delete('/properties/:propertyId', authorize(['admin', 'user']), propertyController.remove);
-apiRouter.post('/properties/:propertyId/images', authorize(['admin', 'user']), propertyController.uploadImage);
-apiRouter.delete('/properties/:propertyId/images', authorize(['admin', 'user']), propertyController.removeImage);
+apiRouter.post('/properties', authenticate, authorize(['admin', 'user']), propertyController.create);
+apiRouter.patch('/properties/:propertyId', authenticate, authorize(['admin', 'user']), propertyController.update);
+apiRouter.delete('/properties/:propertyId', authenticate, authorize(['admin', 'user']), propertyController.remove);
+apiRouter.post('/properties/:propertyId/images', authenticate, authorize(['admin', 'user']), propertyController.uploadImage);
+apiRouter.delete('/properties/:propertyId/images', authenticate, authorize(['admin', 'user']), propertyController.removeImage);
 
 export default apiRouter;
