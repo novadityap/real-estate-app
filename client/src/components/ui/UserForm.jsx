@@ -44,7 +44,7 @@ const UserForm = ({
       username: initialValues.username ?? '',
       email: initialValues.email ?? '',
       password: '',
-      roleId: initialValues.role.id ?? '',
+      roleId: initialValues.role?.id ?? '',
     },
   });
 
