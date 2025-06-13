@@ -1,7 +1,9 @@
 import request from 'supertest';
 import app from '../src/app.js';
-import path from 'node:path';
 import {
+  updateTestUser,
+  getTestRole,
+  removeAllTestRoles,
   createTestProperty,
   createManyTestProperties,
   removeAllTestProperties,
@@ -12,30 +14,26 @@ import {
   removeAllTestUsers,
   removeTestFile,
   checkFileExists,
-  createToken,
+  createAccessToken,
 } from './testUtil.js';
 import cloudinary from '../src/utils/cloudinary.js';
-import prisma from '../src/utils/database.js';
-
-const testPropertyImagePath = path.resolve(
-  process.env.PROPERTY_DIR_TEST,
-  'test-image.jpg'
-);
 
 describe('GET /api/properties/search', () => {
   beforeEach(async () => {
+    await createTestUser('admin');
+    await createAccessToken();
     await createManyTestProperties();
   });
 
   afterEach(async () => {
-    await removeAllTestUsers();
     await removeAllTestProperties();
+    await removeAllTestUsers();
   });
 
   it('should return a list of properties with default pagination', async () => {
     const result = await request(app)
       .get('/api/properties/search')
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(200);
     expect(result.body.message).toBe('Properties retrieved successfully');
@@ -49,7 +47,7 @@ describe('GET /api/properties/search', () => {
   it('should return a list of properties with custom pagination', async () => {
     const result = await request(app)
       .get('/api/properties/search')
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .query({
         page: 2,
       });
@@ -66,7 +64,7 @@ describe('GET /api/properties/search', () => {
   it('should return a list of properties with custom search', async () => {
     const result = await request(app)
       .get('/api/properties/search')
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .query({
         q: 'test10',
       });
@@ -82,10 +80,20 @@ describe('GET /api/properties/search', () => {
 });
 
 describe('GET /api/properties/:propertyId', () => {
+  beforeEach(async () => {
+    await createTestUser('admin');
+    await createAccessToken();
+  });
+
+  afterEach(async () => {
+    await removeAllTestProperties();
+    await removeAllTestUsers();
+  });
+
   it('should return an error if property id is invalid', async () => {
     const result = await request(app)
       .get('/api/properties/invalid-id')
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(400);
     expect(result.body.message).toBe('Validation errors');
@@ -95,7 +103,7 @@ describe('GET /api/properties/:propertyId', () => {
   it('should return an error if property is not found', async () => {
     const result = await request(app)
       .get(`/api/properties/${global.validUUID}`)
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(404);
     expect(result.body.message).toBe('Property not found');
@@ -107,26 +115,30 @@ describe('GET /api/properties/:propertyId', () => {
     const property = await getTestProperty();
     const result = await request(app)
       .get(`/api/properties/${property.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(200);
     expect(result.body.message).toBe('Property retrieved successfully');
     expect(result.body.data).toBeDefined();
-
-    await removeAllTestUsers();
-    await removeAllTestProperties();
   });
 });
 
 describe('POST /api/properties', () => {
+  beforeEach(async () => {
+    await createTestUser('admin');
+    await createAccessToken();
+  });
+
   afterEach(async () => {
     await removeAllTestProperties();
+    await removeAllTestUsers();
+    await removeAllTestRoles();
   });
 
   it('should return an error if input data is invalid', async () => {
     const result = await request(app)
       .post('/api/properties')
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('name', '')
       .field('description', '')
@@ -156,13 +168,9 @@ describe('POST /api/properties', () => {
   });
 
   it('should create a property if input data is valid', async () => {
-    await createTestUser();
-
-    const user = await getTestUser();
-    const adminToken = createToken('auth', 'admin', user.id);
     const result = await request(app)
       .post('/api/properties')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('name', 'test')
       .field('description', 'test')
@@ -175,33 +183,60 @@ describe('POST /api/properties', () => {
       .field('furnished', false)
       .field('offer', true)
       .field('type', 'sale')
-      .attach('images', testPropertyImagePath);
+      .attach('images', global.testPropertyImagePath);
 
     expect(result.status).toBe(201);
     expect(result.body.message).toBe('Property created successfully');
 
-    const updatedUser = await getTestUser();
+    const property = await getTestProperty();
 
-    await removeTestFile(updatedUser.properties[0].images);
-    await removeAllTestUsers();
+    await removeTestFile(property.images);
   });
 });
 
 describe('PATCH /api/properties/:propertyId', () => {
   beforeEach(async () => {
+    await createTestUser('admin');
+    await createAccessToken();
     await createTestProperty();
   });
 
   afterEach(async () => {
-    await removeAllTestUsers();
     await removeAllTestProperties();
+    await removeAllTestUsers();
   });
 
   it('should return an error if property is not owned by current user', async () => {
-    const property = await getTestProperty();
+    const role = await getTestRole('user');
+
+    await updateTestUser({
+      roleId: role.id,
+    });
+    await createAccessToken();
+
+    await createTestUser('user', {
+      username: 'test1',
+      email: 'test1@me.com',
+    });
+    const otherUser = await getTestUser('test1');
+    await createTestProperty({
+      name: 'test1',
+      description: 'test',
+      address: 'test',
+      regularPrice: 10.0,
+      bathroom: 2,
+      bedroom: 5,
+      parking: true,
+      furnished: false,
+      offer: true,
+      type: 'sale',
+      ownerId: otherUser.id,
+    });
+
+    const otherProperty = await getTestProperty('test1');
     const result = await request(app)
-      .patch(`/api/properties/${property.id}`)
-      .set('Authorization', `Bearer ${global.userToken}`);
+      .patch(`/api/properties/${otherProperty.id}`)
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(403);
     expect(result.body.message).toBe('Permission denied');
@@ -210,7 +245,7 @@ describe('PATCH /api/properties/:propertyId', () => {
   it('should return an error if property id is invalid', async () => {
     const result = await request(app)
       .patch('/api/properties/invalid-id')
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(400);
     expect(result.body.message).toBe('Validation errors');
@@ -220,7 +255,7 @@ describe('PATCH /api/properties/:propertyId', () => {
   it('should return an error if property is not found', async () => {
     const result = await request(app)
       .patch(`/api/properties/${global.validUUID}`)
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(404);
     expect(result.body.message).toBe('Property not found');
@@ -230,7 +265,7 @@ describe('PATCH /api/properties/:propertyId', () => {
     const property = await getTestProperty();
     const result = await request(app)
       .patch(`/api/properties/${property.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('name', '')
       .field('description', '');
@@ -245,7 +280,7 @@ describe('PATCH /api/properties/:propertyId', () => {
     const property = await getTestProperty();
     const result = await request(app)
       .patch(`/api/properties/${property.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('name', 'test1')
       .field('description', 'test1');
@@ -260,15 +295,13 @@ describe('PATCH /api/properties/:propertyId', () => {
     const property = await getTestProperty();
     const result = await request(app)
       .patch(`/api/properties/${property.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('name', 'test1')
       .field('description', 'test1')
-      .attach('images', testPropertyImagePath);
+      .attach('images', global.testPropertyImagePath);
 
-    const updatedProperty = await getTestProperty({
-      name: result.body.data.name,
-    });
+    const updatedProperty = await getTestProperty(result.body.data.name);
     const imagesExist = await checkFileExists(updatedProperty.images);
 
     expect(result.status).toBe(200);
@@ -283,19 +316,47 @@ describe('PATCH /api/properties/:propertyId', () => {
 
 describe('DELETE /api/properties/:propertyId', () => {
   beforeEach(async () => {
+    await createTestUser('admin');
+    await createAccessToken();
     await createTestProperty();
   });
 
   afterEach(async () => {
-    await removeAllTestUsers();
     await removeAllTestProperties();
+    await removeAllTestUsers();
   });
 
-  it('should return an error if user is not owned by current user', async () => {
-    const property = await getTestProperty();
+  it('should return an error if property is not owned by current user', async () => {
+    const role = await getTestRole('user');
+
+    await updateTestUser({
+      roleId: role.id,
+    });
+    await createAccessToken();
+
+    await createTestUser('user', {
+      username: 'test1',
+      email: 'test1@me.com',
+    });
+    const otherUser = await getTestUser('test1');
+    await createTestProperty({
+      name: 'test1',
+      description: 'test',
+      address: 'test',
+      regularPrice: 10.0,
+      bathroom: 2,
+      bedroom: 5,
+      parking: true,
+      furnished: false,
+      offer: true,
+      type: 'sale',
+      ownerId: otherUser.id,
+    });
+
+    const otherProperty = await getTestProperty('test1');
     const result = await request(app)
-      .delete(`/api/properties/${property.id}`)
-      .set('Authorization', `Bearer ${global.userToken}`);
+      .delete(`/api/properties/${otherProperty.id}`)
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(403);
     expect(result.body.message).toBe('Permission denied');
@@ -304,7 +365,7 @@ describe('DELETE /api/properties/:propertyId', () => {
   it('should return an error if property id is invalid', async () => {
     const result = await request(app)
       .delete('/api/properties/invalid-id')
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(400);
     expect(result.body.message).toBe('Validation errors');
@@ -314,7 +375,7 @@ describe('DELETE /api/properties/:propertyId', () => {
   it('should return an error if property is not found', async () => {
     const result = await request(app)
       .delete(`/api/properties/${global.validUUID}`)
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(404);
     expect(result.body.message).toBe('Property not found');
@@ -322,15 +383,9 @@ describe('DELETE /api/properties/:propertyId', () => {
 
   it('should delete property with removing images', async () => {
     const property = await getTestProperty();
-    const testPropertyImagePath = path.resolve(
-      process.env.PROPERTY_DIR_TEST,
-      'test-image.jpg'
-    );
     const uploadResult = await cloudinary.uploader.upload(
-      testPropertyImagePath,
-      {
-        folder: 'properties',
-      }
+      global.testPropertyImagePath,
+      { folder: 'properties' }
     );
 
     await updateTestProperty({
@@ -339,7 +394,7 @@ describe('DELETE /api/properties/:propertyId', () => {
     const updatedProperty = getTestProperty();
     const result = await request(app)
       .delete(`/api/properties/${property.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     const imagesExist = await checkFileExists(updatedProperty.images);
 
@@ -351,15 +406,16 @@ describe('DELETE /api/properties/:propertyId', () => {
 
 describe('POST /api/properties/:propertyId/images', () => {
   it('should upload property images', async () => {
+    await createTestUser('admin');
+    await createAccessToken();
     await createTestProperty();
 
     const property = await getTestProperty();
-    const adminToken = createToken('auth', 'admin', property.ownerId);
     const result = await request(app)
       .post(`/api/properties/${property.id}/images`)
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
-      .attach('images', testPropertyImagePath);
+      .attach('images', global.testPropertyImagePath);
 
     expect(result.status).toBe(201);
     expect(result.body.message).toBe('Property images uploaded successfully');
@@ -374,19 +430,47 @@ describe('POST /api/properties/:propertyId/images', () => {
 
 describe('DELETE /api/properties/:propertyId/images', () => {
   beforeEach(async () => {
+    await createTestUser('admin');
+    await createAccessToken();
     await createTestProperty();
   });
 
   afterEach(async () => {
-    await removeAllTestUsers();
     await removeAllTestProperties();
+    await removeAllTestUsers();
   });
 
-  it('should return an error if user is not owned by current user', async () => {
-    const property = await getTestProperty();
+  it('should return an error if property is not owned by current user', async () => {
+    const role = await getTestRole('user');
+
+    await updateTestUser({
+      roleId: role.id,
+    });
+    await createAccessToken();
+
+    await createTestUser('user', {
+      username: 'test1',
+      email: 'test1@me.com',
+    });
+    const otherUser = await getTestUser('test1');
+    await createTestProperty({
+      name: 'test1',
+      description: 'test',
+      address: 'test',
+      regularPrice: 10.0,
+      bathroom: 2,
+      bedroom: 5,
+      parking: true,
+      furnished: false,
+      offer: true,
+      type: 'sale',
+      ownerId: otherUser.id,
+    });
+
+    const otherProperty = await getTestProperty('test1');
     const result = await request(app)
-      .delete(`/api/properties/${property.id}/images`)
-      .set('Authorization', `Bearer ${global.userToken}`);
+      .delete(`/api/properties/${otherProperty.id}/images`)
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(403);
     expect(result.body.message).toBe('Permission denied');
@@ -395,7 +479,7 @@ describe('DELETE /api/properties/:propertyId/images', () => {
   it('should return an error if property id is invalid', async () => {
     const result = await request(app)
       .delete('/api/properties/invalid-id/images')
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(400);
     expect(result.body.message).toBe('Validation errors');
@@ -405,7 +489,7 @@ describe('DELETE /api/properties/:propertyId/images', () => {
   it('should return an error if property is not found', async () => {
     const result = await request(app)
       .delete(`/api/properties/${global.validUUID}/images`)
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(404);
     expect(result.body.message).toBe('Property not found');
@@ -413,15 +497,9 @@ describe('DELETE /api/properties/:propertyId/images', () => {
 
   it('should delete property images', async () => {
     const property = await getTestProperty();
-    const testPropertyImagePath = path.resolve(
-      process.env.PROPERTY_DIR_TEST,
-      'test-image.jpg'
-    );
     const uploadResult = await cloudinary.uploader.upload(
-      testPropertyImagePath,
-      {
-        folder: 'properties',
-      }
+      global.testPropertyImagePath,
+      { folder: 'properties' }
     );
 
     await updateTestProperty({
@@ -430,7 +508,7 @@ describe('DELETE /api/properties/:propertyId/images', () => {
     const updatedProperty = await getTestProperty();
     const result = await request(app)
       .delete(`/api/properties/${property.id}/images`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .send({
         image: updatedProperty.images[0],
       });

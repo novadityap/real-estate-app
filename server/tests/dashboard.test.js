@@ -1,6 +1,9 @@
 import request from 'supertest';
 import app from '../src/app.js';
 import {
+  createAccessToken,
+  createTestRole,
+  createTestUser,
   createManyTestRoles,
   createManyTestProperties,
   createManyTestUsers,
@@ -10,31 +13,35 @@ import {
 } from './testUtil.js';
 
 describe('GET /api/dashboard', () => {
-  beforeEach(async () => {
-    await createManyTestRoles();
-    await createManyTestProperties();
-    await createManyTestUsers();
-  });
-
   afterEach(async () => {
-    await removeAllTestRoles();
     await removeAllTestProperties();
     await removeAllTestUsers();
+    await removeAllTestRoles();
   });
 
   it('should return an error if user does not have permission', async () => {
+    await createTestUser('user');
+    await createAccessToken();
+
     const result = await request(app)
       .get('/api/dashboard')
-      .set('Authorization', `Bearer ${global.userToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(403);
     expect(result.body.message).toBe('Permission denied');
   });
 
   it('should return dashboard statistics data', async () => {
+    await createTestRole();
+    await createTestUser('admin');
+    await createAccessToken('access');
+    await createManyTestRoles();
+    await createManyTestProperties();
+    await createManyTestUsers();
+
     const result = await request(app)
       .get('/api/dashboard')
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(200);
     expect(result.body.message).toBe('Statistics data retrieved successfully');
