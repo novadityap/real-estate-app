@@ -23,12 +23,19 @@ const signup = async (req, res, next) => {
     },
   });
 
+  const errors = {};
+
   if (user) {
-    logger.warn('user already exists');
-    return res.status(200).json({
-      code: 200,
-      message: 'Please check your email to verify your account',
-    });
+    if (user.username === fields.username) {
+      errors.username = 'Username already in use';
+    }
+    if (user.email === fields.email) {
+      errors.email = 'Email already in use';
+    }
+  }
+
+  if (Object.keys(errors).length > 0) {
+    throw new ResponseError('Resource already in use', 409, errors);
   }
 
   const userRole = await prisma.role.findFirst({
@@ -83,7 +90,6 @@ const verifyEmail = async (req, res, next) => {
       id: user.id,
     },
     data: {
-      avatar: process.env.DEFAULT_AVATAR_URL,
       isVerified: true,
       verificationToken: null,
       verificationTokenExpires: null,
@@ -108,14 +114,12 @@ const resendVerification = async (req, res, next) => {
   });
 
   if (!user) {
-    logger.warn('user is not registered');
-    return res.status(200).json({
-      code: 200,
-      message: 'Please check your email to verify your account',
+    throw new ResponseError('Validation errors', 400, {
+      email: 'Email is not registered',
     });
   }
 
-  prisma.user.update({
+  const updatedUser = await prisma.user.update({
     where: {
       id: user.id,
     },
@@ -126,11 +130,11 @@ const resendVerification = async (req, res, next) => {
   });
 
   const html = await ejs.renderFile('./src/views/verifyEmail.ejs', {
-    username: user.username,
-    url: `${process.env.CLIENT_URL}/verify-email/${user.verificationToken}`,
+    username: updatedUser.username,
+    url: `${process.env.CLIENT_URL}/verify-email/${updatedUser.verificationToken}`,
   });
 
-  await sendMail(user.email, 'Verify Email', html);
+  await sendMail(updatedUser.email, 'Verify Email', html);
   logger.info('verification email sent successfully');
 
   res.status(200).json({
@@ -152,25 +156,23 @@ const signin = async (req, res, next) => {
     },
   });
 
-  if (!user) throw new ResponseError('Email or password is invalid', 401);
+  if (!user || !(await bcrypt.compare(fields.password, user.password)))
+    throw new ResponseError('Email or password is invalid', 401);
 
-  const isMatch = await bcrypt.compare(fields.password, user.password);
-  if (!isMatch) throw new ResponseError('Email or password is invalid', 401);
-
-  const payload = { id: user.id, role: user.role.name };
+  const payload = { sub: user.id, role: user.role.name };
   const token = jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES,
   });
   const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRES,
   });
+  const decodedRefreshToken = jwt.decode(refreshToken);
 
-  await prisma.user.update({
-    where: {
-      id: user.id,
-    },
+  await prisma.refreshToken.create({
     data: {
-      refreshToken,
+      token: refreshToken,
+      userId: user.id,
+      expiresAt: new Date(decodedRefreshToken.exp * 1000),
     },
   });
 
@@ -199,28 +201,14 @@ const signout = async (req, res, next) => {
   if (!refreshToken)
     throw new ResponseError('Refresh token is not provided', 401);
 
-  const user = await prisma.user.findFirst({
+  const deletedToken = await prisma.refreshToken.deleteMany({
     where: {
-      refreshToken,
-    },
-  });
-
-  if (!user) throw new ResponseError('Refresh token is invalid', 401);
-
-  await prisma.user.update({
-    where: {
-      id: user.id,
-    },
-    data: {
-      refreshToken: null,
-    },
-  });
-
-  await prisma.blacklist.create({
-    data: {
       token: refreshToken,
     },
   });
+
+  if (deletedToken.count === 0)
+    throw new ResponseError('Refresh token is invalid', 401);
 
   logger.info('signed out successfully');
   res.clearCookie('refreshToken');
@@ -232,25 +220,21 @@ const refreshToken = async (req, res, next) => {
   if (!refreshToken)
     throw new ResponseError('Refresh token is not provided', 401);
 
-  const blacklistedToken = await prisma.blacklist.findFirst({
+  const storedToken = await prisma.refreshToken.findFirst({
     where: {
       token: refreshToken,
-    },
-  });
-
-  if (blacklistedToken)
-    throw new ResponseError('Refresh token is invalid', 401);
-
-  const user = await prisma.user.findFirst({
-    where: {
-      refreshToken,
+      expiresAt: { gt: new Date() },
     },
     include: {
-      role: true,
+      user: {
+        include: {
+          role: true,
+        },
+      },
     },
   });
 
-  if (!user) throw new ResponseError('Refresh token is invalid', 401);
+  if (!storedToken) throw new ResponseError('Refresh token is invalid', 401);
 
   jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, decoded) => {
     if (err) {
@@ -262,7 +246,7 @@ const refreshToken = async (req, res, next) => {
   });
 
   const newToken = jwt.sign(
-    { id: user.id, role: user.role.name },
+    { sub: storedToken.user.id, role: storedToken.user.role.name },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES }
   );
@@ -286,14 +270,12 @@ const requestResetPassword = async (req, res, next) => {
   });
 
   if (!user) {
-    logger.warn('user is not registered');
-    return res.status(200).json({
-      code: 200,
-      message: 'Please check your email to reset your password',
+    throw new ResponseError('Validation errors', 400, {
+      email: 'Email is not registered',
     });
   }
 
-  await prisma.user.update({
+  const updatedUser = await prisma.user.update({
     where: {
       id: user.id,
     },
@@ -304,11 +286,11 @@ const requestResetPassword = async (req, res, next) => {
   });
 
   const html = await ejs.renderFile('./src/views/resetPassword.ejs', {
-    username: user.username,
-    url: `${process.env.CLIENT_URL}/reset-password/${user.resetToken}`,
+    username: updatedUser.username,
+    url: `${process.env.CLIENT_URL}/reset-password/${updatedUser.resetToken}`,
   });
 
-  await sendMail(user.email, 'Reset Password', html);
+  await sendMail(updatedUser.email, 'Reset Password', html);
 
   logger.info('reset password email sent successfully');
   res.status(200).json({
