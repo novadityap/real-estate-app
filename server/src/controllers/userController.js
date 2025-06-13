@@ -206,15 +206,19 @@ const create = async (req, res, next) => {
     },
   });
 
-  if (user) {
-    const field = user.username === fields.username ? 'username' : 'email';
-    const capitalizedField = `${
-      field.charAt(0).toUpperCase() + field.slice(1)
-    }`;
+  const errors = {};
 
-    throw new ResponseError('Resource already in use', 409, {
-      [field]: `${capitalizedField} already in use`,
-    });
+  if (user) {
+    if (user.username === fields.username) {
+      errors.username = 'Username already in use';
+    }
+    if (user.email === fields.email) {
+      errors.email = 'Email already in use';
+    }
+  }
+
+  if (Object.keys(errors).length > 0) {
+    throw new ResponseError('Resource already in use', 409, errors);
   }
 
   const role = await prisma.role.findUnique({

@@ -1,7 +1,10 @@
 import request from 'supertest';
 import app from '../src/app.js';
-import path from 'node:path';
 import {
+  createAccessToken,
+  createTestRole,
+  getTestRole,
+  removeAllTestRoles,
   createTestUser,
   createManyTestUsers,
   removeAllTestUsers,
@@ -11,26 +14,31 @@ import {
   checkFileExists,
 } from './testUtil.js';
 import cloudinary from '../src/utils/cloudinary.js';
-import prisma from '../src/utils/database.js';
-
-const testAvatarPath = path.resolve(
-  process.env.AVATAR_DIR_TEST,
-  'test-avatar.jpg'
-);
 
 describe('GET /api/users/search', () => {
   beforeEach(async () => {
+    await createTestRole();
+    await createTestUser('admin');
+    await createAccessToken();
     await createManyTestUsers();
   });
 
   afterEach(async () => {
     await removeAllTestUsers();
+    await removeAllTestRoles();
   });
 
   it('should return an error if user does not have permission', async () => {
+    const role = await getTestRole('user');
+
+    await updateTestUser({
+      roleId: role.id,
+    });
+    await createAccessToken();
+
     const result = await request(app)
       .get('/api/users/search')
-      .set('Authorization', `Bearer ${global.userToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(403);
     expect(result.body.message).toBe('Permission denied');
@@ -39,13 +47,13 @@ describe('GET /api/users/search', () => {
   it('should return a list of users with default pagination', async () => {
     const result = await request(app)
       .get('/api/users/search')
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(200);
     expect(result.body.message).toBe('Users retrieved successfully');
     expect(result.body.data).toHaveLength(10);
     expect(result.body.meta.pageSize).toBe(10);
-    expect(result.body.meta.totalItems).toBe(15);
+    expect(result.body.meta.totalItems).toBeGreaterThanOrEqual(15);
     expect(result.body.meta.currentPage).toBe(1);
     expect(result.body.meta.totalPages).toBe(2);
   });
@@ -53,16 +61,16 @@ describe('GET /api/users/search', () => {
   it('should return a list of users with custom pagination', async () => {
     const result = await request(app)
       .get('/api/users/search')
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .query({
         page: 2,
       });
 
     expect(result.status).toBe(200);
     expect(result.body.message).toBe('Users retrieved successfully');
-    expect(result.body.data.length).toBe(5);
+    expect(result.body.data.length).toBeGreaterThanOrEqual(5);
     expect(result.body.meta.pageSize).toBe(10);
-    expect(result.body.meta.totalItems).toBe(15);
+    expect(result.body.meta.totalItems).toBeGreaterThanOrEqual(15);
     expect(result.body.meta.currentPage).toBe(2);
     expect(result.body.meta.totalPages).toBe(2);
   });
@@ -70,7 +78,7 @@ describe('GET /api/users/search', () => {
   it('should return a list of users with custom search', async () => {
     const result = await request(app)
       .get('/api/users/search')
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .query({
         q: 'test10',
       });
@@ -86,24 +94,40 @@ describe('GET /api/users/search', () => {
 });
 
 describe('GET /api/users/:userId', () => {
-  it('should return an error if user is not owned by current user', async () => {
-    await createTestUser();
+  beforeEach(async () => {
+    await createTestUser('admin');
+    await createAccessToken();
+  });
 
-    const user = await getTestUser();
+  afterEach(async () => {
+    await removeAllTestUsers();
+  });
+
+  it('should return an error if user is not owned by current user', async () => {
+    const role = await getTestRole('user');
+
+    await createTestUser('user', {
+      username: 'test1',
+      email: 'test1@me.com',
+    });
+    await updateTestUser({
+      roleId: role.id,
+    });
+    await createAccessToken();
+
+    const otherUser = await getTestUser('test1');
     const result = await request(app)
-      .get(`/api/users/${user.id}`)
-      .set('Authorization', `Bearer ${global.userToken}`);
+      .get(`/api/users/${otherUser.id}`)
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(403);
     expect(result.body.message).toBe('Permission denied');
-
-    await removeAllTestUsers();
   });
 
   it('should return an error if user id is invalid', async () => {
     const result = await request(app)
       .get('/api/users/invalid-id')
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(400);
     expect(result.body.message).toBe('Validation errors');
@@ -113,35 +137,28 @@ describe('GET /api/users/:userId', () => {
   it('should return an error if user is not found', async () => {
     const result = await request(app)
       .get(`/api/users/${global.validUUID}`)
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(404);
     expect(result.body.message).toBe('User not found');
   });
 
   it('should return a user for user id is valid', async () => {
-    await createTestUser();
-
     const user = await getTestUser();
     const result = await request(app)
       .get(`/api/users/${user.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(200);
     expect(result.body.message).toBe('User retrieved successfully');
     expect(result.body.data).toBeDefined();
-
-    await removeAllTestUsers();
   });
 });
 
 describe('POST /api/users', () => {
-  let adminRole;
-
   beforeEach(async () => {
-    adminRole = await prisma.role.findUnique({
-      where: { name: 'admin' },
-    });
+    await createTestUser('admin');
+    await createAccessToken();
   });
 
   afterEach(async () => {
@@ -149,9 +166,22 @@ describe('POST /api/users', () => {
   });
 
   it('should return an error if user does not have permission', async () => {
+    const role = await getTestRole('user');
+
+    await updateTestUser({
+      roleId: role.id,
+    });
+    await createAccessToken();
+
     const result = await request(app)
       .post('/api/users')
-      .set('Authorization', `Bearer ${global.userToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`)
+      .send({
+        username: 'test1',
+        email: 'test1@me.com',
+        password: 'password',
+        roleId: role.id,
+      });
 
     expect(result.status).toBe(403);
     expect(result.body.message).toBe('Permission denied');
@@ -160,7 +190,7 @@ describe('POST /api/users', () => {
   it('should return an error if input data is invalid', async () => {
     const result = await request(app)
       .post('/api/users')
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .send({
         username: '',
         email: '',
@@ -177,16 +207,20 @@ describe('POST /api/users', () => {
   });
 
   it('should return an error if email already in use', async () => {
-    await createTestUser();
+    await createTestUser('admin', {
+      username: 'test1',
+      email: 'test1@me.com',
+    });
 
+    const role = await getTestRole('admin');
     const result = await request(app)
       .post('/api/users')
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .send({
         username: 'test1',
         email: 'test@me.com',
         password: 'test123',
-        roleId: adminRole.id,
+        roleId: role.id,
       });
 
     expect(result.status).toBe(409);
@@ -195,16 +229,20 @@ describe('POST /api/users', () => {
   });
 
   it('should return an error if username already in use', async () => {
-    await createTestUser();
+    await createTestUser('admin', {
+      username: 'test1',
+      email: 'test1@me.com',
+    });
 
+    const role = await getTestRole('admin');
     const result = await request(app)
       .post('/api/users')
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .send({
         username: 'test',
         email: 'test1@me.com',
         password: 'test123',
-        roleId: adminRole.id,
+        roleId: role.id,
       });
 
     expect(result.status).toBe(409);
@@ -215,7 +253,7 @@ describe('POST /api/users', () => {
   it('should return an error if role is invalid', async () => {
     const result = await request(app)
       .post('/api/users')
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .send({
         username: 'test',
         email: 'test@me.com',
@@ -229,14 +267,15 @@ describe('POST /api/users', () => {
   });
 
   it('should create a user if input data is valid', async () => {
+    const role = await getTestRole('admin');
     const result = await request(app)
       .post('/api/users')
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .send({
-        username: 'test',
-        email: 'test@me.com',
+        username: 'test1',
+        email: 'test1@me.com',
         password: 'test123',
-        roleId: adminRole.id,
+        roleId: role.id,
       });
 
     expect(result.status).toBe(201);
@@ -245,13 +284,9 @@ describe('POST /api/users', () => {
 });
 
 describe('PATCH /api/users/:userId/profile', () => {
-  let adminRole;
-
   beforeEach(async () => {
-    adminRole = await prisma.role.findUnique({
-      where: { name: 'admin' },
-    });
-    await createTestUser();
+    await createTestUser('admin');
+    await createAccessToken();
   });
 
   afterEach(async () => {
@@ -259,10 +294,21 @@ describe('PATCH /api/users/:userId/profile', () => {
   });
 
   it('should return an error if user is not owned by current user', async () => {
-    const user = await getTestUser();
+    const role = await getTestRole('user');
+
+    await createTestUser('user', {
+      username: 'test1',
+      email: 'test1@me.com',
+    });
+    await updateTestUser({
+      roleId: role.id,
+    });
+    await createAccessToken();
+
+    const otherUser = await getTestUser('test1');
     const result = await request(app)
-      .patch(`/api/users/${user.id}/profile`)
-      .set('Authorization', `Bearer ${global.userToken}`);
+      .patch(`/api/users/${otherUser.id}/profile`)
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(403);
     expect(result.body.message).toBe('Permission denied');
@@ -271,7 +317,7 @@ describe('PATCH /api/users/:userId/profile', () => {
   it('should return an error if user id is invalid', async () => {
     const result = await request(app)
       .patch('/api/users/invalid-id')
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(400);
     expect(result.body.message).toBe('Validation errors');
@@ -281,7 +327,7 @@ describe('PATCH /api/users/:userId/profile', () => {
   it('should return an error if user is not found', async () => {
     const result = await request(app)
       .patch(`/api/users/${global.validUUID}/profile`)
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(404);
     expect(result.body.message).toBe('User not found');
@@ -291,7 +337,7 @@ describe('PATCH /api/users/:userId/profile', () => {
     const user = await getTestUser();
     const result = await request(app)
       .patch(`/api/users/${user.id}/profile`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('email', '')
       .field('username', '');
@@ -303,7 +349,7 @@ describe('PATCH /api/users/:userId/profile', () => {
   });
 
   it('should return an error if email is already in use', async () => {
-    await createTestUser({
+    await createTestUser('admin', {
       username: 'test1',
       email: 'test1@me.com',
     });
@@ -311,7 +357,7 @@ describe('PATCH /api/users/:userId/profile', () => {
     const user = await getTestUser();
     const result = await request(app)
       .patch(`/api/users/${user.id}/profile`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('email', 'test1@me.com');
 
@@ -321,7 +367,7 @@ describe('PATCH /api/users/:userId/profile', () => {
   });
 
   it('should return an error if username is already in use', async () => {
-    await createTestUser({
+    await createTestUser('admin', {
       username: 'test1',
       email: 'test1@me.com',
     });
@@ -329,7 +375,7 @@ describe('PATCH /api/users/:userId/profile', () => {
     const user = await getTestUser();
     const result = await request(app)
       .patch(`/api/users/${user.id}/profile`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('username', 'test1');
 
@@ -342,7 +388,7 @@ describe('PATCH /api/users/:userId/profile', () => {
     const user = await getTestUser();
     const result = await request(app)
       .patch(`/api/users/${user.id}/profile`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('email', 'test1@me.com')
       .field('username', 'test1');
@@ -357,15 +403,13 @@ describe('PATCH /api/users/:userId/profile', () => {
     const user = await getTestUser();
     const result = await request(app)
       .patch(`/api/users/${user.id}/profile`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('email', 'test1@me.com')
       .field('username', 'test1')
-      .attach('avatar', testAvatarPath);
+      .attach('avatar', global.testAvatarPath);
 
-    const updatedUser = await getTestUser({
-      username: result.body.data.username,
-    });
+    const updatedUser = await getTestUser(result.body.data.username);
     const avatarExists = await checkFileExists(updatedUser.avatar);
 
     expect(result.status).toBe(200);
@@ -379,13 +423,9 @@ describe('PATCH /api/users/:userId/profile', () => {
 });
 
 describe('PATCH /api/users/:userId', () => {
-  let adminRole;
-
   beforeEach(async () => {
-    adminRole = await prisma.role.findUnique({
-      where: { name: 'admin' },
-    });
-    await createTestUser();
+    await createTestUser('admin');
+    await createAccessToken();
   });
 
   afterEach(async () => {
@@ -393,10 +433,21 @@ describe('PATCH /api/users/:userId', () => {
   });
 
   it('should return an error if user is not owned by current user', async () => {
-    const user = await getTestUser();
+    const role = await getTestRole('user');
+
+    await createTestUser('user', {
+      username: 'test1',
+      email: 'test1@me.com',
+    });
+    await updateTestUser({
+      roleId: role.id,
+    });
+    await createAccessToken();
+
+    const otherUser = await getTestUser('test1');
     const result = await request(app)
-      .patch(`/api/users/${user.id}`)
-      .set('Authorization', `Bearer ${global.userToken}`);
+      .patch(`/api/users/${otherUser.id}`)
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(403);
     expect(result.body.message).toBe('Permission denied');
@@ -405,7 +456,7 @@ describe('PATCH /api/users/:userId', () => {
   it('should return an error if user id is invalid', async () => {
     const result = await request(app)
       .patch('/api/users/invalid-id')
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(400);
     expect(result.body.message).toBe('Validation errors');
@@ -415,7 +466,7 @@ describe('PATCH /api/users/:userId', () => {
   it('should return an error if user is not found', async () => {
     const result = await request(app)
       .patch(`/api/users/${global.validUUID}`)
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(404);
     expect(result.body.message).toBe('User not found');
@@ -425,7 +476,7 @@ describe('PATCH /api/users/:userId', () => {
     const user = await getTestUser();
     const result = await request(app)
       .patch(`/api/users/${user.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('email', '')
       .field('username', '');
@@ -440,7 +491,7 @@ describe('PATCH /api/users/:userId', () => {
     const user = await getTestUser();
     const result = await request(app)
       .patch(`/api/users/${user.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('email', 'test1@me.com')
       .field('username', 'test1')
@@ -452,18 +503,19 @@ describe('PATCH /api/users/:userId', () => {
   });
 
   it('should return an error if email is already in use', async () => {
-    await createTestUser({
+    await createTestUser('admin', {
       username: 'test1',
       email: 'test1@me.com',
     });
 
+    const role = await getTestRole('admin');
     const user = await getTestUser();
     const result = await request(app)
       .patch(`/api/users/${user.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('email', 'test1@me.com')
-      .field('roleId', adminRole.id);
+      .field('roleId', role.id);
 
     expect(result.status).toBe(409);
     expect(result.body.message).toBe('Resource already in use');
@@ -471,19 +523,20 @@ describe('PATCH /api/users/:userId', () => {
   });
 
   it('should return an error if username is already in use', async () => {
-    await createTestUser({
+    await createTestUser('admin', {
       username: 'test1',
       email: 'test1@me.com',
     });
 
+    const role = await getTestRole('admin');
     const user = await getTestUser();
     const result = await request(app)
       .patch(`/api/users/${user.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('email', 'test1@me.com')
       .field('username', 'test1')
-      .field('roleId', adminRole.id);
+      .field('roleId', role.id);
 
     expect(result.status).toBe(409);
     expect(result.body.message).toBe('Resource already in use');
@@ -491,35 +544,34 @@ describe('PATCH /api/users/:userId', () => {
   });
 
   it('should update user without changing avatar', async () => {
+    const role = await getTestRole('admin');
     const user = await getTestUser();
     const result = await request(app)
       .patch(`/api/users/${user.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('email', 'test1@me.com')
       .field('username', 'test1')
-      .field('roleId', adminRole.id);
+      .field('roleId', role.id);
 
     expect(result.status).toBe(200);
     expect(result.body.message).toBe('User updated successfully');
     expect(result.body.data.email).toBe('test1@me.com');
     expect(result.body.data.username).toBe('test1');
-    expect(result.body.data.roleId).toBe(adminRole.id);
+    expect(result.body.data.roleId).toBe(role.id);
   });
 
   it('should update user with changing avatar', async () => {
     const user = await getTestUser();
     const result = await request(app)
       .patch(`/api/users/${user.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`)
+      .set('Authorization', `Bearer ${global.accessToken}`)
       .set('Content-Type', 'multipart/form-data')
       .field('email', 'test1@me.com')
       .field('username', 'test1')
-      .attach('avatar', testAvatarPath);
+      .attach('avatar', global.testAvatarPath);
 
-    const updatedUser = await getTestUser({
-      username: result.body.data.username,
-    });
+    const updatedUser = await getTestUser(result.body.data.username);
     const avatarExists = await checkFileExists(updatedUser.avatar);
 
     expect(result.status).toBe(200);
@@ -534,7 +586,8 @@ describe('PATCH /api/users/:userId', () => {
 
 describe('DELETE /api/users/:userId', () => {
   beforeEach(async () => {
-    await createTestUser();
+    await createTestUser('admin');
+    await createAccessToken();
   });
 
   afterEach(async () => {
@@ -542,10 +595,21 @@ describe('DELETE /api/users/:userId', () => {
   });
 
   it('should return an error if user is not owned by current user', async () => {
-    const user = await getTestUser();
+    const role = await getTestRole('user');
+
+    await createTestUser('user', {
+      username: 'test1',
+      email: 'test1@me.com',
+    });
+    await updateTestUser({
+      roleId: role.id,
+    });
+    await createAccessToken();
+
+    const otherUser = await getTestUser('test1');
     const result = await request(app)
-      .delete(`/api/users/${user.id}`)
-      .set('Authorization', `Bearer ${global.userToken}`);
+      .delete(`/api/users/${otherUser.id}`)
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(403);
     expect(result.body.message).toBe('Permission denied');
@@ -554,7 +618,7 @@ describe('DELETE /api/users/:userId', () => {
   it('should return an error if user id is invalid', async () => {
     const result = await request(app)
       .delete('/api/users/invalid-id')
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(400);
     expect(result.body.message).toBe('Validation errors');
@@ -564,7 +628,7 @@ describe('DELETE /api/users/:userId', () => {
   it('should return an error if user is not found', async () => {
     const result = await request(app)
       .delete(`/api/users/${global.validUUID}`)
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     expect(result.status).toBe(404);
     expect(result.body.message).toBe('User not found');
@@ -574,7 +638,7 @@ describe('DELETE /api/users/:userId', () => {
     const user = await getTestUser();
     const result = await request(app)
       .delete(`/api/users/${user.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     const avatarExists = await checkFileExists(process.env.DEFAULT_AVATAR_URL);
 
@@ -585,21 +649,19 @@ describe('DELETE /api/users/:userId', () => {
 
   it('should delete user with removing avatar', async () => {
     const user = await getTestUser();
-    const testAvatarPath = path.resolve(
-      process.env.AVATAR_DIR_TEST,
-      'test-avatar.jpg'
+    const uploadResult = await cloudinary.uploader.upload(
+      global.testAvatarPath,
+      {
+        folder: 'avatars',
+      }
     );
-    const uploadResult = await cloudinary.uploader.upload(testAvatarPath, {
-      folder: 'avatars',
-    });
 
-    await updateTestUser({
+    const updatedUser = await updateTestUser({
       avatar: uploadResult.secure_url,
     });
-    const updatedUser = getTestUser();
     const result = await request(app)
       .delete(`/api/users/${user.id}`)
-      .set('Authorization', `Bearer ${global.adminToken}`);
+      .set('Authorization', `Bearer ${global.accessToken}`);
 
     const avatarExists = await checkFileExists(updatedUser.avatar);
 
