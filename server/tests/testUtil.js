@@ -3,28 +3,56 @@ import bcrypt from 'bcrypt';
 import cloudinary from '../src/utils/cloudinary.js';
 import extractPublicId from '../src/utils/extractPublicId.js';
 import prisma from '../src/utils/database.js';
-import crypto from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
 
-export const createTestBlacklist = async (fields = {}) => {
-  await prisma.blacklist.create({
-    data: {
-      token: jwt.sign({ id: 1 }, process.env.JWT_REFRESH_SECRET),
-      ...fields,
-    },
-  });
-};
+export const getTestRefreshToken = async () => {
+  const user = await getTestUser();
 
-export const removeAllTestBlacklists = async () => {
-  await prisma.blacklist.deleteMany({});
-};
-
-export const createTestUser = async (fields = {}) => {
-  const role = await prisma.role.findFirst({
+  return await prisma.refreshToken.findFirst({
     where: {
-      name: 'user',
+      userId: user.id,
     },
   });
+}
+
+export const createTestRefreshToken = async () => {
+  const user = await getTestUser();
+  const token = jwt.sign(
+    { 
+      sub: user.id,
+      role: user.role.name
+    }, 
+    process.env.JWT_REFRESH_SECRET, 
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES }
+  );
+
+  return await prisma.refreshToken.create({
+    data: {
+      token,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+    },
+  });
+}
+
+export const removeAllTestRefreshToken = async () => {
+  await prisma.refreshToken.deleteMany({
+    where: {
+      user: {
+        username: { startsWith: 'test' }
+      }
+    }
+  });
+}
+
+export const getTestUser = async (username = 'test') => {
+  return await prisma.user.findUnique({
+    where: { username },
+    include: { role: true }
+  });
+};
+
+export const createTestUser = async (roleName, fields = {}) => {
+  const role = await getTestRole(roleName);
 
   await prisma.user.create({
     data: {
@@ -32,8 +60,6 @@ export const createTestUser = async (fields = {}) => {
       email: 'test@me.com',
       password: await bcrypt.hash('test123', 10),
       roleId: role.id,
-      verificationToken: crypto.randomBytes(32).toString('hex'),
-      verificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
       avatar: process.env.DEFAULT_AVATAR_URL,
       ...fields,
     },
@@ -41,11 +67,7 @@ export const createTestUser = async (fields = {}) => {
 };
 
 export const createManyTestUsers = async () => {
-  const role = await prisma.role.findFirst({
-    where: {
-      name: 'user',
-    },
-  });
+  const role = await getTestRole();
 
   for (let i = 0; i < 15; i++) {
     await prisma.user.create({
@@ -61,27 +83,11 @@ export const createManyTestUsers = async () => {
 };
 
 export const updateTestUser = async (fields = {}) => {
-  await prisma.user.update({
+  return await prisma.user.update({
     where: {
       username: 'test',
     },
     data: fields,
-  });
-};
-
-export const getTestUser = async (fields = {}) => {
-  return await prisma.user.findUnique({
-    where: {
-      username: 'test',
-      ...fields,
-    },
-    include: {
-      properties: {
-        select: {
-          images: true,
-        },
-      },
-    },
   });
 };
 
@@ -95,12 +101,9 @@ export const removeAllTestUsers = async () => {
   });
 };
 
-export const removeTestUser = async (fields = {}) => {
-  await prisma.user.deleteMany({
-    where: {
-      username: 'test',
-      ...fields,
-    },
+export const getTestRole = async (name = 'test') => {
+  return await prisma.role.findUnique({
+    where: { name },
   });
 };
 
@@ -123,13 +126,6 @@ export const createManyTestRoles = async () => {
   }
 };
 
-export const getTestRole = async () => {
-  return await prisma.role.findUnique({
-    where: {
-      name: 'test',
-    },
-  });
-};
 
 export const removeAllTestRoles = async () => {
   await prisma.role.deleteMany({
@@ -141,11 +137,16 @@ export const removeAllTestRoles = async () => {
   });
 };
 
+export const getTestProperty = async (name = 'test') => {
+  return await prisma.property.findFirst({
+    where: { name },
+  });
+};
+
 export const createTestProperty = async (fields = {}) => {
-  await createTestUser();
   const user = await getTestUser();
 
-  return await prisma.property.create({
+  await prisma.property.create({
     data: {
       name: 'test',
       description: 'test',
@@ -159,13 +160,12 @@ export const createTestProperty = async (fields = {}) => {
       offer: true,
       type: 'sale',
       ownerId: user.id,
-      ...fields,
+      ...fields
     },
   });
 };
 
 export const createManyTestProperties = async () => {
-  await createTestUser();
   const user = await getTestUser();
 
   for (let i = 0; i < 15; i++) {
@@ -189,46 +189,39 @@ export const createManyTestProperties = async () => {
 };
 
 export const updateTestProperty = async (fields = {}) => {
-  const property = await getTestProperty();
-  await prisma.property.update({
-    where: {
-      id: property.id,
-    },
+  const property = await prisma.property.findFirst({
+    where: { name: 'test' },
+  });
+
+  return await prisma.property.update({
+    where: { id: property.id },
     data: fields,
   });
 };
 
-export const getTestProperty = async (fields = {}) => {
-  return await prisma.property.findFirst({
-    where: {
-      name: 'test',
-      ...fields,
-    },
-  });
-};
-
-export const removeAllTestProperties = async (fields = {}) => {
+export const removeAllTestProperties = async () => {
   await prisma.property.deleteMany({
     where: {
-      name: 'test',
-      ...fields,
+      name: {
+        startsWith: 'test',
+      },
     },
   });
 };
 
-export const createToken = (type, role, userId) => {
-  const secret =
-    type === 'auth' ? process.env.JWT_SECRET : process.env.JWT_REFRESH_SECRET;
-
-  const expiresIn =
-    type === 'auth' ? process.env.JWT_EXPIRES : process.env.JWT_REFRESH_EXPIRES;
+export const createAccessToken = async () => {
+  const user = await getTestUser();
 
   const payload = {
-    id: userId || uuidv4(),
-    role,
+    sub: user.id,
+    role: user.role.name,
   };
 
-  return jwt.sign(payload, secret, { expiresIn });
+  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES,
+  });
+
+  global.accessToken = accessToken;
 };
 
 export const checkFileExists = async url => {
