@@ -35,7 +35,7 @@ const signup = async (req, res, next) => {
   }
 
   if (Object.keys(errors).length > 0) {
-    throw new ResponseError('Validation Errors', 400, errors);
+    throw new ResponseError('Validation errors', 400, errors);
   }
 
   const userRole = await prisma.role.findFirst({
