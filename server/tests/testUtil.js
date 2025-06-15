@@ -12,16 +12,16 @@ export const getTestRefreshToken = async () => {
       userId: user.id,
     },
   });
-}
+};
 
 export const createTestRefreshToken = async () => {
   const user = await getTestUser();
   const token = jwt.sign(
-    { 
+    {
       sub: user.id,
-      role: user.role.name
-    }, 
-    process.env.JWT_REFRESH_SECRET, 
+      role: user.role.name,
+    },
+    process.env.JWT_REFRESH_SECRET,
     { expiresIn: process.env.JWT_REFRESH_EXPIRES }
   );
 
@@ -32,29 +32,29 @@ export const createTestRefreshToken = async () => {
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     },
   });
-}
+};
 
 export const removeAllTestRefreshToken = async () => {
   await prisma.refreshToken.deleteMany({
     where: {
       user: {
-        username: { startsWith: 'test' }
-      }
-    }
+        username: { startsWith: 'test' },
+      },
+    },
   });
-}
+};
 
 export const getTestUser = async (username = 'test') => {
   return await prisma.user.findUnique({
     where: { username },
-    include: { role: true }
+    include: { role: true },
   });
 };
 
-export const createTestUser = async (roleName, fields = {}) => {
-  const role = await getTestRole(roleName);
+export const createTestUser = async (fields = {}) => {
+  const role = await getTestRole('admin');
 
-  await prisma.user.create({
+  return await prisma.user.create({
     data: {
       username: 'test',
       email: 'test@me.com',
@@ -67,7 +67,7 @@ export const createTestUser = async (roleName, fields = {}) => {
 };
 
 export const createManyTestUsers = async () => {
-  const role = await getTestRole();
+  const role = await getTestRole('admin');
 
   for (let i = 0; i < 15; i++) {
     await prisma.user.create({
@@ -108,7 +108,7 @@ export const getTestRole = async (name = 'test') => {
 };
 
 export const createTestRole = async (fields = {}) => {
-  await prisma.role.create({
+  return await prisma.role.create({
     data: {
       name: 'test',
       ...fields,
@@ -125,7 +125,6 @@ export const createManyTestRoles = async () => {
     });
   }
 };
-
 
 export const removeAllTestRoles = async () => {
   await prisma.role.deleteMany({
@@ -146,7 +145,7 @@ export const getTestProperty = async (name = 'test') => {
 export const createTestProperty = async (fields = {}) => {
   const user = await getTestUser();
 
-  await prisma.property.create({
+  return await prisma.property.create({
     data: {
       name: 'test',
       description: 'test',
@@ -160,7 +159,7 @@ export const createTestProperty = async (fields = {}) => {
       offer: true,
       type: 'sale',
       ownerId: user.id,
-      ...fields
+      ...fields,
     },
   });
 };
@@ -211,17 +210,14 @@ export const removeAllTestProperties = async () => {
 
 export const createAccessToken = async () => {
   const user = await getTestUser();
-
-  const payload = {
-    sub: user.id,
-    role: user.role.name,
-  };
-
-  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES,
-  });
-
-  global.accessToken = accessToken;
+  global.accessToken = jwt.sign(
+    {
+      sub: user.id,
+      role: user.role.name,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES }
+  );
 };
 
 export const checkFileExists = async url => {
