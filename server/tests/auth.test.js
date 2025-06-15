@@ -38,7 +38,7 @@ describe('POST /api/auth/signup', () => {
   });
 
   it('should not create a new user if email already in use', async () => {
-    await createTestUser('admin');
+    await createTestUser();
 
     const result = await request(app).post('/api/auth/signup').send({
       username: 'test',
@@ -64,7 +64,7 @@ describe('POST /api/auth/signup', () => {
 
 describe('POST /api/auth/verify-email/:token', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
   });
 
   afterEach(async () => {
@@ -130,7 +130,7 @@ describe('POST /api/auth/resend-verification', () => {
   });
 
   it('should send verification email if user is registered', async () => {
-    await createTestUser('admin');
+    await createTestUser();
 
     const result = await request(app)
       .post('/api/auth/resend-verification')
@@ -148,7 +148,7 @@ describe('POST /api/auth/resend-verification', () => {
 
 describe('POST /api/auth/signin', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
   });
 
   afterEach(async () => {
@@ -203,7 +203,7 @@ describe('POST /api/auth/signin', () => {
 
 describe('POST /api/auth/signout', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
   });
 
@@ -246,7 +246,7 @@ describe('POST /api/auth/signout', () => {
 
 describe('POST /api/auth/refresh-token', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
   });
 
@@ -320,7 +320,7 @@ describe('POST /api/auth/request-reset-password', () => {
   });
 
   it('should send reset password email if user is registered', async () => {
-    await createTestUser('admin', { isVerified: true });
+    await createTestUser({ isVerified: true });
 
     const result = await request(app)
       .post('/api/auth/request-reset-password')
@@ -337,7 +337,7 @@ describe('POST /api/auth/request-reset-password', () => {
 
 describe('POST /api/auth/reset-password/:token', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
   });
 
   afterEach(async () => {

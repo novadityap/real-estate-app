@@ -12,13 +12,19 @@ import {
 } from './testUtil.js';
 
 describe('GET /api/roles', () => {
+  beforeEach(async () => {
+    await createTestUser();
+    await createAccessToken();
+  });
+
   afterEach(async () => {
     await removeAllTestUsers();
     await removeAllTestRoles();
   });
 
   it('should return an error if user does not have permission', async () => {
-    await createTestUser('user');
+    const role = await getTestRole('user');
+    await updateTestUser({ roleId: role.id });
     await createAccessToken();
 
     const result = await request(app)
@@ -30,8 +36,6 @@ describe('GET /api/roles', () => {
   });
 
   it('should return all roles', async () => {
-    await createTestUser('admin');
-    await createAccessToken();
     await createManyTestRoles();
 
     const result = await request(app)
@@ -46,7 +50,7 @@ describe('GET /api/roles', () => {
 
 describe('GET /api/roles/search', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
     await createManyTestRoles();
   });
@@ -123,7 +127,7 @@ describe('GET /api/roles/search', () => {
 
 describe('GET /api/roles/:roleId', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
   });
 
@@ -183,7 +187,7 @@ describe('GET /api/roles/:roleId', () => {
 
 describe('POST /api/roles', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
   });
 
@@ -251,7 +255,7 @@ describe('POST /api/roles', () => {
 
 describe('PATCH /api/roles/:roleId', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
     await createTestRole();
   });
@@ -329,7 +333,7 @@ describe('PATCH /api/roles/:roleId', () => {
 
 describe('DELETE /api/roles/:roleId', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
     await createTestRole();
   });

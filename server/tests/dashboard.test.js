@@ -3,6 +3,8 @@ import app from '../src/app.js';
 import {
   createAccessToken,
   createTestRole,
+  getTestRole,
+  updateTestUser,
   createTestUser,
   createManyTestRoles,
   createManyTestProperties,
@@ -13,6 +15,11 @@ import {
 } from './testUtil.js';
 
 describe('GET /api/dashboard', () => {
+  beforeEach(async () => {
+    await createTestUser();
+    await createAccessToken();
+  })
+
   afterEach(async () => {
     await removeAllTestProperties();
     await removeAllTestUsers();
@@ -20,7 +27,8 @@ describe('GET /api/dashboard', () => {
   });
 
   it('should return an error if user does not have permission', async () => {
-    await createTestUser('user');
+    const role = await getTestRole('user');
+    await updateTestUser({ roleId: role.id });
     await createAccessToken();
 
     const result = await request(app)
@@ -32,9 +40,6 @@ describe('GET /api/dashboard', () => {
   });
 
   it('should return dashboard statistics data', async () => {
-    await createTestRole();
-    await createTestUser('admin');
-    await createAccessToken('access');
     await createManyTestRoles();
     await createManyTestProperties();
     await createManyTestUsers();

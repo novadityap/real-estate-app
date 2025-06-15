@@ -20,7 +20,7 @@ import cloudinary from '../src/utils/cloudinary.js';
 
 describe('GET /api/properties/search', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
     await createManyTestProperties();
   });
@@ -81,7 +81,7 @@ describe('GET /api/properties/search', () => {
 
 describe('GET /api/properties/:propertyId', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
   });
 
@@ -110,9 +110,7 @@ describe('GET /api/properties/:propertyId', () => {
   });
 
   it('should return a user for property id is valid', async () => {
-    await createTestProperty();
-
-    const property = await getTestProperty();
+    const property = await createTestProperty();
     const result = await request(app)
       .get(`/api/properties/${property.id}`)
       .set('Authorization', `Bearer ${global.accessToken}`);
@@ -125,7 +123,7 @@ describe('GET /api/properties/:propertyId', () => {
 
 describe('POST /api/properties', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
   });
 
@@ -196,7 +194,7 @@ describe('POST /api/properties', () => {
 
 describe('PATCH /api/properties/:propertyId', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
     await createTestProperty();
   });
@@ -208,18 +206,12 @@ describe('PATCH /api/properties/:propertyId', () => {
 
   it('should return an error if property is not owned by current user', async () => {
     const role = await getTestRole('user');
-
-    await updateTestUser({
-      roleId: role.id,
-    });
-    await createAccessToken();
-
-    await createTestUser('user', {
+    const otherUser = await createTestUser({
       username: 'test1',
       email: 'test1@me.com',
+      roleId: role.id,
     });
-    const otherUser = await getTestUser('test1');
-    await createTestProperty({
+    const otherProperty = await createTestProperty({
       name: 'test1',
       description: 'test',
       address: 'test',
@@ -233,7 +225,9 @@ describe('PATCH /api/properties/:propertyId', () => {
       ownerId: otherUser.id,
     });
 
-    const otherProperty = await getTestProperty('test1');
+    await updateTestUser({ roleId: role.id });
+    await createAccessToken();
+
     const result = await request(app)
       .patch(`/api/properties/${otherProperty.id}`)
       .set('Authorization', `Bearer ${global.accessToken}`);
@@ -316,7 +310,7 @@ describe('PATCH /api/properties/:propertyId', () => {
 
 describe('DELETE /api/properties/:propertyId', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
     await createTestProperty();
   });
@@ -328,18 +322,12 @@ describe('DELETE /api/properties/:propertyId', () => {
 
   it('should return an error if property is not owned by current user', async () => {
     const role = await getTestRole('user');
-
-    await updateTestUser({
-      roleId: role.id,
-    });
-    await createAccessToken();
-
-    await createTestUser('user', {
+    const otherUser = await createTestUser({
       username: 'test1',
       email: 'test1@me.com',
+      roleId: role.id,
     });
-    const otherUser = await getTestUser('test1');
-    await createTestProperty({
+    const otherProperty = await createTestProperty({
       name: 'test1',
       description: 'test',
       address: 'test',
@@ -353,7 +341,9 @@ describe('DELETE /api/properties/:propertyId', () => {
       ownerId: otherUser.id,
     });
 
-    const otherProperty = await getTestProperty('test1');
+    await updateTestUser({ roleId: role.id });
+    await createAccessToken();
+
     const result = await request(app)
       .delete(`/api/properties/${otherProperty.id}`)
       .set('Authorization', `Bearer ${global.accessToken}`);
@@ -406,7 +396,7 @@ describe('DELETE /api/properties/:propertyId', () => {
 
 describe('POST /api/properties/:propertyId/images', () => {
   it('should upload property images', async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
     await createTestProperty();
 
@@ -430,7 +420,7 @@ describe('POST /api/properties/:propertyId/images', () => {
 
 describe('DELETE /api/properties/:propertyId/images', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
     await createTestProperty();
   });
@@ -442,18 +432,12 @@ describe('DELETE /api/properties/:propertyId/images', () => {
 
   it('should return an error if property is not owned by current user', async () => {
     const role = await getTestRole('user');
-
-    await updateTestUser({
-      roleId: role.id,
-    });
-    await createAccessToken();
-
-    await createTestUser('user', {
+    const otherUser = await createTestUser({
       username: 'test1',
       email: 'test1@me.com',
+      roleId: role.id,
     });
-    const otherUser = await getTestUser('test1');
-    await createTestProperty({
+    const otherProperty = await createTestProperty({
       name: 'test1',
       description: 'test',
       address: 'test',
@@ -467,7 +451,9 @@ describe('DELETE /api/properties/:propertyId/images', () => {
       ownerId: otherUser.id,
     });
 
-    const otherProperty = await getTestProperty('test1');
+    await updateTestUser({ roleId: role.id });
+    await createAccessToken();
+
     const result = await request(app)
       .delete(`/api/properties/${otherProperty.id}/images`)
       .set('Authorization', `Bearer ${global.accessToken}`);

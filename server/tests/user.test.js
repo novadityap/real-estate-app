@@ -17,15 +17,13 @@ import cloudinary from '../src/utils/cloudinary.js';
 
 describe('GET /api/users/search', () => {
   beforeEach(async () => {
-    await createTestRole();
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
     await createManyTestUsers();
   });
 
   afterEach(async () => {
     await removeAllTestUsers();
-    await removeAllTestRoles();
   });
 
   it('should return an error if user does not have permission', async () => {
@@ -95,7 +93,7 @@ describe('GET /api/users/search', () => {
 
 describe('GET /api/users/:userId', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
   });
 
@@ -105,17 +103,15 @@ describe('GET /api/users/:userId', () => {
 
   it('should return an error if user is not owned by current user', async () => {
     const role = await getTestRole('user');
-
-    await createTestUser('user', {
+    const otherUser = await createTestUser({
       username: 'test1',
       email: 'test1@me.com',
-    });
-    await updateTestUser({
       roleId: role.id,
     });
+
+    await updateTestUser({ roleId: role.id });
     await createAccessToken();
 
-    const otherUser = await getTestUser('test1');
     const result = await request(app)
       .get(`/api/users/${otherUser.id}`)
       .set('Authorization', `Bearer ${global.accessToken}`);
@@ -157,7 +153,7 @@ describe('GET /api/users/:userId', () => {
 
 describe('POST /api/users', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
   });
 
@@ -207,7 +203,7 @@ describe('POST /api/users', () => {
   });
 
   it('should return an error if email already in use', async () => {
-    await createTestUser('admin', {
+    await createTestUser({
       username: 'test1',
       email: 'test1@me.com',
     });
@@ -229,7 +225,7 @@ describe('POST /api/users', () => {
   });
 
   it('should return an error if username already in use', async () => {
-    await createTestUser('admin', {
+    await createTestUser({
       username: 'test1',
       email: 'test1@me.com',
     });
@@ -285,7 +281,7 @@ describe('POST /api/users', () => {
 
 describe('PATCH /api/users/:userId/profile', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
   });
 
@@ -295,17 +291,15 @@ describe('PATCH /api/users/:userId/profile', () => {
 
   it('should return an error if user is not owned by current user', async () => {
     const role = await getTestRole('user');
-
-    await createTestUser('user', {
+    const otherUser = await createTestUser({
       username: 'test1',
       email: 'test1@me.com',
-    });
-    await updateTestUser({
       roleId: role.id,
     });
+
+    await updateTestUser({ roleId: role.id });
     await createAccessToken();
 
-    const otherUser = await getTestUser('test1');
     const result = await request(app)
       .patch(`/api/users/${otherUser.id}/profile`)
       .set('Authorization', `Bearer ${global.accessToken}`);
@@ -349,7 +343,7 @@ describe('PATCH /api/users/:userId/profile', () => {
   });
 
   it('should return an error if email is already in use', async () => {
-    await createTestUser('admin', {
+    await createTestUser({
       username: 'test1',
       email: 'test1@me.com',
     });
@@ -367,7 +361,7 @@ describe('PATCH /api/users/:userId/profile', () => {
   });
 
   it('should return an error if username is already in use', async () => {
-    await createTestUser('admin', {
+    await createTestUser({
       username: 'test1',
       email: 'test1@me.com',
     });
@@ -424,7 +418,7 @@ describe('PATCH /api/users/:userId/profile', () => {
 
 describe('PATCH /api/users/:userId', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
   });
 
@@ -434,17 +428,15 @@ describe('PATCH /api/users/:userId', () => {
 
   it('should return an error if user is not owned by current user', async () => {
     const role = await getTestRole('user');
-
-    await createTestUser('user', {
+    const otherUser = await createTestUser({
       username: 'test1',
       email: 'test1@me.com',
-    });
-    await updateTestUser({
       roleId: role.id,
     });
+
+    await updateTestUser({ roleId: role.id });
     await createAccessToken();
 
-    const otherUser = await getTestUser('test1');
     const result = await request(app)
       .patch(`/api/users/${otherUser.id}`)
       .set('Authorization', `Bearer ${global.accessToken}`);
@@ -503,7 +495,7 @@ describe('PATCH /api/users/:userId', () => {
   });
 
   it('should return an error if email is already in use', async () => {
-    await createTestUser('admin', {
+    await createTestUser({
       username: 'test1',
       email: 'test1@me.com',
     });
@@ -523,7 +515,7 @@ describe('PATCH /api/users/:userId', () => {
   });
 
   it('should return an error if username is already in use', async () => {
-    await createTestUser('admin', {
+    await createTestUser({
       username: 'test1',
       email: 'test1@me.com',
     });
@@ -586,7 +578,7 @@ describe('PATCH /api/users/:userId', () => {
 
 describe('DELETE /api/users/:userId', () => {
   beforeEach(async () => {
-    await createTestUser('admin');
+    await createTestUser();
     await createAccessToken();
   });
 
@@ -596,17 +588,15 @@ describe('DELETE /api/users/:userId', () => {
 
   it('should return an error if user is not owned by current user', async () => {
     const role = await getTestRole('user');
-
-    await createTestUser('user', {
+    const otherUser = await createTestUser({
       username: 'test1',
       email: 'test1@me.com',
-    });
-    await updateTestUser({
       roleId: role.id,
     });
+
+    await updateTestUser({ roleId: role.id });
     await createAccessToken();
 
-    const otherUser = await getTestUser('test1');
     const result = await request(app)
       .delete(`/api/users/${otherUser.id}`)
       .set('Authorization', `Bearer ${global.accessToken}`);
