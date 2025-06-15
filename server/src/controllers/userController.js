@@ -76,7 +76,7 @@ const updateProfile = async (req, res, next) => {
       })) > 0;
 
     if (isUsernameTaken) {
-      throw new ResponseError('Resource already in use', 409, {
+      throw new ResponseError('Validation errors', 400, {
         username: 'Username already in use',
       });
     }
@@ -92,7 +92,7 @@ const updateProfile = async (req, res, next) => {
       })) > 0;
 
     if (isEmailTaken) {
-      throw new ResponseError('Resource already in use', 409, {
+      throw new ResponseError('Validation errors', 400, {
         email: 'Email already in use',
       });
     }
@@ -218,7 +218,7 @@ const create = async (req, res, next) => {
   }
 
   if (Object.keys(errors).length > 0) {
-    throw new ResponseError('Resource already in use', 409, errors);
+    throw new ResponseError('Validation errors', 400, errors);
   }
 
   const role = await prisma.role.findUnique({
@@ -288,7 +288,7 @@ const update = async (req, res, next) => {
       })) > 0;
 
     if (isUsernameTaken) {
-      throw new ResponseError('Resource already in use', 409, {
+      throw new ResponseError('Validation errors', 400, {
         username: 'Username already in use',
       });
     }
@@ -304,7 +304,7 @@ const update = async (req, res, next) => {
       })) > 0;
 
     if (isEmailTaken) {
-      throw new ResponseError('Resource already in use', 409, {
+      throw new ResponseError('Validation errors', 400, {
         email: 'Email already in use',
       });
     }
