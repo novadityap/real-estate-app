@@ -136,7 +136,9 @@ const search = async (req, res, next) => {
   const query = validate(searchUserSchema, req.query);
   const { page, limit, q } = query;
 
-  const where = {};
+  const where = {
+    NOT: { id: req.user.id }
+  };
 
   if (q) {
     where.OR = [

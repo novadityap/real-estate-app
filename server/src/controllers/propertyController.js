@@ -59,11 +59,16 @@ const search = async (req, res, next) => {
     sortBy,
     page,
     limit,
+    source
   } = query;
 
   const where = {
     AND: [],
   };
+
+  if (source === 'datatable' && req.user.role !== 'admin') {
+    where.AND.push({ ownerId: req.user.id });
+  }
 
   if (q) {
     const searchConditions = [

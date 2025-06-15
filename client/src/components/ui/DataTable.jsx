@@ -37,7 +37,6 @@ import {
 import dayjs from 'dayjs';
 import ReactPaginate from 'react-paginate';
 import { cn } from '@/lib/utils';
-import { useSelector } from 'react-redux';
 
 const Pagination = ({ pageCount, onPageChange, currentPage, forcePage }) => (
   <ReactPaginate
@@ -237,7 +236,6 @@ const DataTable = ({
   entityName,
 }) => {
   const columnsHelper = createColumnHelper();
-  const { currentUser } = useSelector(state => state.auth);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setcurrentPage] = useState(0);
   const [limit, setLimit] = useState(10);
@@ -254,6 +252,7 @@ const DataTable = ({
     page: searchTerm ? 1 : currentPage + 1,
     limit,
     q: searchTerm,
+    source: 'datatable'
   });
   const [fetchShowQuery, { data: item }] = lazyShowQuery();
   const [removeMutate, { isLoading: isLoadingRemove }] = removeMutation();
@@ -358,24 +357,8 @@ const DataTable = ({
     setcurrentPage(0);
   };
 
-  const filterItem = ({ items = [], entityName, currentUser }) => {
-    if (entityName === 'user') {
-      return items.filter(user => user.id !== currentUser.id);
-    }
-
-    if (entityName === 'property') {
-      if (currentUser.role === 'admin') {
-        return items;
-      } else {
-        return items.filter(property => property.ownerId === currentUser.id);
-      }
-    }
-
-    return items;
-  };
-
   const table = useReactTable({
-    data: filterItem({ items: items?.data, entityName, currentUser }),
+    data: items?.data || [],
     columns: mergedColumns,
     getCoreRowModel: getCoreRowModel(),
     manualFiltering: true,

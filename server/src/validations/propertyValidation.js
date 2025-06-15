@@ -49,6 +49,7 @@ export const searchPropertySchema = Joi.object({
   furnished: Joi.boolean().optional(),
   parking: Joi.boolean().optional(),
   sortBy: Joi.string().valid('latest', 'oldest', 'price_low_to_high', 'price_high_to_low').default('latest'),
+  source: Joi.string().valid('datatable').optional()
 });
 
 export const getPropertySchema = Joi.string()
