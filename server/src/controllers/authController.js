@@ -259,7 +259,7 @@ const refreshToken = async (req, res, next) => {
   });
 };
 
-const requestResetPassword = async (req, res, next) => {
+const resetPasswordRequest = async (req, res, next) => {
   const fields = validate(verifyEmailSchema, req.body);
 
   const user = await prisma.user.findFirst({
@@ -335,7 +335,7 @@ export default {
   signin,
   signout,
   refreshToken,
-  requestResetPassword,
+  resetPasswordRequest,
   resetPassword,
   verifyEmail,
   resendVerification,

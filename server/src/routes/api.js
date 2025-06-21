@@ -15,7 +15,7 @@ apiRouter.post('/auth/verify-email/:verificationToken', authController.verifyEma
 apiRouter.post('/auth/resend-verification', authController.resendVerification);
 apiRouter.post('/auth/refresh-token', authController.refreshToken);
 apiRouter.post('/auth/signin', authController.signin);
-apiRouter.post('/auth/request-reset-password', authController.requestResetPassword);
+apiRouter.post('/auth/request-reset-password', authController.resetPasswordRequest);
 apiRouter.post('/auth/reset-password/:resetToken', authController.resetPassword);
 apiRouter.get('/properties/search', propertyController.search);
 apiRouter.get('/properties/:propertyId', propertyController.show);
