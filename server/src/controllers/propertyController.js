@@ -250,7 +250,7 @@ const update = async (req, res, next) => {
   if (files && files.length > 0) {
     const newImages = files.map(f => f.secure_url);
     const oldImages = property.images;
-
+    
     const imagesToDelete = oldImages.filter(img => !newImages.includes(img));
 
     for (const image of imagesToDelete) {

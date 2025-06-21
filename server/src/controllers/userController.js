@@ -66,35 +66,43 @@ const updateProfile = async (req, res, next) => {
     formSchema: updateProfileSchema,
   });
 
+  const checkDuplicateConditions = [];
   if (fields.username && fields.username !== user.username) {
-    const isUsernameTaken =
-      (await prisma.user.count({
-        where: {
-          username: fields.username,
-          id: { not: userId },
-        },
-      })) > 0;
-
-    if (isUsernameTaken) {
-      throw new ResponseError('Validation errors', 400, {
-        username: 'Username already in use',
-      });
-    }
+    checkDuplicateConditions.push({ username: fields.username });
+  }
+  if (fields.email && fields.email !== user.email) {
+    checkDuplicateConditions.push({ email: fields.email });
   }
 
-  if (fields.email && fields.email !== user.email) {
-    const isEmailTaken =
-      (await prisma.user.count({
-        where: {
-          email: fields.email,
-          id: { not: userId },
-        },
-      })) > 0;
+  if (checkDuplicateConditions.length > 0) {
+    const existingUsers = await prisma.user.findMany({
+      where: {
+        AND: [
+          { id: { not: userId } },
+          {
+            OR: checkDuplicateConditions,
+          },
+        ],
+      },
+      select: {
+        username: true,
+        email: true,
+      },
+    });
 
-    if (isEmailTaken) {
-      throw new ResponseError('Validation errors', 400, {
-        email: 'Email already in use',
-      });
+    const errors = {};
+
+    for (const existing of existingUsers) {
+      if (existing.username === fields.username) {
+        errors.username = 'Username already in use';
+      }
+      if (existing.email === fields.email) {
+        errors.email = 'Email already in use';
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      throw new ResponseError('Validation errors', 400, errors);
     }
   }
 
@@ -137,7 +145,7 @@ const search = async (req, res, next) => {
   const { page, limit, q } = query;
 
   const where = {
-    NOT: { id: req.user.id }
+    NOT: { id: req.user.id },
   };
 
   if (q) {
@@ -280,35 +288,40 @@ const update = async (req, res, next) => {
     formSchema: updateUserSchema,
   });
 
-  if (fields.username && fields.username !== user.username) {
-    const isUsernameTaken =
-      (await prisma.user.count({
-        where: {
-          username: fields.username,
-          id: { not: userId },
-        },
-      })) > 0;
+  const checkDuplicateConditions = [];
 
-    if (isUsernameTaken) {
-      throw new ResponseError('Validation errors', 400, {
-        username: 'Username already in use',
-      });
-    }
+  if (fields.username && fields.username !== user.username) {
+    checkDuplicateConditions.push({ username: fields.username });
   }
 
   if (fields.email && fields.email !== user.email) {
-    const isEmailTaken =
-      (await prisma.user.count({
-        where: {
-          email: fields.email,
-          id: { not: userId },
-        },
-      })) > 0;
+    checkDuplicateConditions.push({ email: fields.email });
+  }
 
-    if (isEmailTaken) {
-      throw new ResponseError('Validation errors', 400, {
-        email: 'Email already in use',
-      });
+  if (checkDuplicateConditions.length > 0) {
+    const existingUsers = await prisma.user.findMany({
+      where: {
+        AND: [{ id: { not: userId } }, { OR: checkDuplicateConditions }],
+      },
+      select: {
+        username: true,
+        email: true,
+      },
+    });
+
+    const errors = {};
+
+    for (const existing of existingUsers) {
+      if (existing.username === fields.username) {
+        errors.username = 'Username already in use';
+      }
+      if (existing.email === fields.email) {
+        errors.email = 'Email already in use';
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      throw new ResponseError('Validation errors', 400, errors);
     }
   }
 

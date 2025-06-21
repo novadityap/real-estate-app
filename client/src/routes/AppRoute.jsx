@@ -11,7 +11,7 @@ import Signin from '@/pages/public/Signin';
 import Signup from '@/pages/public/Signup';
 import VerifyEmail from '@/pages/public/VerifyEmail';
 import ResendVerification from '@/pages/public/ResendVerification';
-import RequestResetPassword from '@/pages/public/RequestResetPassword';
+import ResetPasswordRequest from '@/pages/public/ResetPasswordRequest';
 import ResetPassword from '@/pages/public/ResetPassword';
 import Unauthorized from '@/pages/public/Unauthorized';
 import Profile from '@/pages/private/Profile';
@@ -34,7 +34,7 @@ const router = createBrowserRouter(
         <Route path="resend-verification" element={<ResendVerification />} />
         <Route
           path="request-reset-password"
-          element={<RequestResetPassword />}
+          element={<ResetPasswordRequest />}
         />
         <Route path="reset-password/:resetToken" element={<ResetPassword />} />
         <Route
