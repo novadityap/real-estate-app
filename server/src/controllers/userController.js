@@ -66,7 +66,9 @@ const updateProfile = async (req, res, next) => {
     formSchema: updateProfileSchema,
   });
 
+  const errors = {};
   const checkDuplicateConditions = [];
+
   if (fields.username && fields.username !== user.username) {
     checkDuplicateConditions.push({ username: fields.username });
   }
@@ -75,7 +77,7 @@ const updateProfile = async (req, res, next) => {
   }
 
   if (checkDuplicateConditions.length > 0) {
-    const existingUsers = await prisma.user.findMany({
+    const existingUser = await prisma.user.findFirst({
       where: {
         AND: [
           { id: { not: userId } },
@@ -84,27 +86,18 @@ const updateProfile = async (req, res, next) => {
           },
         ],
       },
-      select: {
-        username: true,
-        email: true,
-      },
     });
 
-    const errors = {};
-
-    for (const existing of existingUsers) {
-      if (existing.username === fields.username) {
-        errors.username = 'Username already in use';
-      }
-      if (existing.email === fields.email) {
-        errors.email = 'Email already in use';
-      }
+    if (existingUser?.username === fields.username) {
+      errors.username = 'Username already in use';
     }
-
-    if (Object.keys(errors).length > 0) {
-      throw new ResponseError('Validation errors', 400, errors);
+    if (existingUser?.email === fields.email) {
+      errors.email = 'Email already in use';
     }
   }
+
+  if (Object.keys(errors).length > 0)
+    throw new ResponseError('Validation errors', 400, errors);
 
   if (fields.password) fields.password = await bcrypt.hash(fields.password, 10);
 
@@ -288,6 +281,7 @@ const update = async (req, res, next) => {
     formSchema: updateUserSchema,
   });
 
+  const errors = {};
   const checkDuplicateConditions = [];
 
   if (fields.username && fields.username !== user.username) {
@@ -299,30 +293,16 @@ const update = async (req, res, next) => {
   }
 
   if (checkDuplicateConditions.length > 0) {
-    const existingUsers = await prisma.user.findMany({
+    const existingUser = await prisma.user.findFirst({
       where: {
         AND: [{ id: { not: userId } }, { OR: checkDuplicateConditions }],
       },
-      select: {
-        username: true,
-        email: true,
-      },
     });
 
-    const errors = {};
-
-    for (const existing of existingUsers) {
-      if (existing.username === fields.username) {
-        errors.username = 'Username already in use';
-      }
-      if (existing.email === fields.email) {
-        errors.email = 'Email already in use';
-      }
-    }
-
-    if (Object.keys(errors).length > 0) {
-      throw new ResponseError('Validation errors', 400, errors);
-    }
+    if (existingUser?.username === fields.username)
+      errors.username = 'Username already in use';
+    if (existingUser?.email === fields.email)
+      errors.email = 'Email already in use';
   }
 
   if (fields.roleId) {
@@ -332,12 +312,11 @@ const update = async (req, res, next) => {
       },
     });
 
-    if (!role) {
-      throw new ResponseError('Validation errors', 400, {
-        roles: 'Invalid role id',
-      });
-    }
+    if (!role) errors.roleId = 'Invalid role id';
   }
+
+  if (Object.keys(errors).length > 0)
+    throw new ResponseError('Validation errors', 400, errors);
 
   if (fields.password) fields.password = await bcrypt.hash(fields.password, 10);
 
