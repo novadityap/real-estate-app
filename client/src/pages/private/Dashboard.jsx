@@ -101,7 +101,7 @@ const Dashboard = () => {
                 className="flex justify-between items-center py-1"
               >
                 <Link
-                  to={`/propertys/${property.id}`}
+                  to={`/properties/${property.id}`}
                   className="hover:underline text-blue-700 font-medium truncate"
                 >
                   {property.name}
