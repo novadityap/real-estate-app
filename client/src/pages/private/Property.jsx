@@ -126,15 +126,9 @@ const Property = () => {
           <DataTable
             columns={columns}
             searchQuery={useSearchPropertiesQuery}
-            lazyShowQuery={useLazyShowPropertyQuery}
-            createMutation={useCreatePropertyMutation}
-            updateMutation={useUpdatePropertyMutation}
             removeMutation={useRemovePropertyMutation}
-            uploadImageMutation={useUploadPropertyImageMutation}
-            removeImageMutation={useRemovePropertyImageMutation}
             FormComponent={PropertyForm}
             entityName="property"
-            allowFileUpload={true}
           />
         </CardContent>
       </Card>
