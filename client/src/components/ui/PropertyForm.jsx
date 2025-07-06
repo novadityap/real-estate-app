@@ -23,51 +23,81 @@ import { Checkbox } from '@/components/shadcn/checkbox';
 import { cn } from '@/lib/utils';
 import { TbLoader } from 'react-icons/tb';
 import { toast } from 'react-hot-toast';
+import {
+  useUploadPropertyImageMutation,
+  useRemovePropertyImageMutation,
+  useCreatePropertyMutation,
+  useUpdatePropertyMutation,
+  useShowPropertyQuery,
+} from '@/services/propertyApi';
+import { Skeleton } from '@/components/shadcn/skeleton';
 
-const PropertyForm = ({
-  initialValues,
-  mutation,
-  uploadImageMutation,
-  removeImageMutation,
-  onComplete,
-  onCancel,
-  isCreate,
-}) => {
+const PropertySkeleton = ({isCreate}) => (
+  <div className="space-y-4">
+    {!isCreate && (
+      <div className="flex justify-center">
+        <Skeleton className="h-32 w-32 rounded-full" />
+      </div>
+    )}
+    <Skeleton className="h-4 w-[120px]" />
+    <Skeleton className="h-10 w-full" />
+    <Skeleton className="h-4 w-[120px]" />
+    <Skeleton className="h-10 w-full" />
+    <Skeleton className="h-4 w-[120px]" />
+    <Skeleton className="h-10 w-full" />
+    <Skeleton className="h-4 w-[120px]" />
+    <Skeleton className="h-10 w-full" />
+    <div className="flex justify-end gap-2">
+      <Skeleton className="h-10 w-24 rounded-md" />
+      <Skeleton className="h-10 w-24 rounded-md" />
+    </div>
+  </div>
+);
+
+const PropertyForm = ({ id, onSubmitComplete, onCancel, isCreate}) => {
+  const { data: property, isLoading: isPropertyLoading } =
+    useShowPropertyQuery(id, {
+      skip: isCreate || !id,
+    });
   const [previewImages, setPreviewImages] = useState([]);
   const [images, setImages] = useState([]);
-  const [removingImageUrl, setRemovingImageUrl] = useState('');
-  const [removeImage, { isLoading: isLoadingRemoveImage }] =
-    removeImageMutation();
+  const [imageToRemove, setImageToRemove] = useState('');
+  const [removeImage, { isLoading: isRemoveImageLoading }] =
+    useRemovePropertyImageMutation();
   const {
     form: formUpload,
     handleSubmit: handleSubmitUpload,
-    isLoading: isLoadingUpload,
+    isLoading: isUploadLoading,
   } = useFormHandler({
-    params: [{ name: 'propertyId', value: initialValues.id }],
-    mutation: uploadImageMutation,
+    fileFieldname: 'images',
+    isMultiple: true,
+    params: [{ name: 'propertyId', value: id }],
+    mutation: useUploadPropertyImageMutation,
     defaultValues: { images: ''}
   });
   const { form, handleSubmit, isLoading } = useFormHandler({
-    formType: 'datatable',
     isCreate,
+    fileFieldname: 'images',
+    isMultiple: true,
+    mutation: isCreate
+      ? useCreatePropertyMutation
+      : useUpdatePropertyMutation,
     ...(!isCreate && {
-      params: [{ name: 'propertyId', value: initialValues.id }],
+      params: [{ name: 'propertyId', value: id }],
     }),
-    mutation,
-    onComplete,
+    onSubmitComplete,
     defaultValues: {
-      images: '',
-      name: initialValues.name ?? '',
-      description: initialValues.description ?? '',
-      address: initialValues.address ?? '',
-      regularPrice: initialValues.regularPrice ?? '',
-      discountPrice: initialValues.discountPrice ?? '',
-      type: initialValues.type ?? '',
-      bedroom: initialValues.bedroom ?? '',
-      bathroom: initialValues.bathroom ?? '',
-      parking: initialValues.parking ?? false,
-      furnished: initialValues.furnished ?? false,
-      offer: initialValues.offer ?? false,
+      name: '',
+      description: '',
+      address: '',
+      regularPrice: '',
+      discountPrice: '',
+      type: '',
+      bedroom: '',
+      bathroom: '',
+      parking: false,
+      furnished: false,
+      offer: false,
     },
   });
 
@@ -84,41 +114,51 @@ const PropertyForm = ({
   };
 
   const handleRemoveImage = index => {
-    const updatedImages = [...images];
-    const updatedPreviews = [...previewImages];
+    const imageUrl = previewImages[index];
+    setImageToRemove(imageUrl);
 
-    const removedPreview = updatedPreviews[index];
-
-    updatedImages.splice(index, 1);
-    updatedPreviews.splice(index, 1);
-
-    URL.revokeObjectURL(removedPreview);
-
-    setRemovingImageUrl(removedPreview);
-    setImages(updatedImages);
-
-    if (isCreate) setPreviewImages(updatedPreviews);
-
-    if (!isCreate) {
-      removeImage({
-        propertyId: initialValues.id,
-        data: {
-          image: removedPreview,
-        },
-      })
-        .unwrap()
-        .then(res => {
-          setPreviewImages(updatedPreviews);
-          setRemovingImageUrl('');
-          toast.success(res.message);
-        })
-        .catch(e => toast.error(e.message));
+    if (imageUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(imageUrl);
+      setPreviewImages(prev => {
+        const copy = [...prev];
+        copy.splice(index, 1);
+        return copy;
+      });
+      setImages(prev => {
+        const copy = [...prev];
+        copy.splice(index, 1);
+        return copy;
+      });
+      setImageToRemove('');
+      return;
     }
-  };
 
-  useEffect(() => {
-    if (!isCreate) setPreviewImages(initialValues.images);
-  }, []);
+    removeImage({
+      propertyId: id,
+      data: { image: imageUrl },
+    })
+      .unwrap()
+      .then(res => {
+        toast.success(res.message);
+
+        setPreviewImages(prev => {
+          const copy = [...prev];
+          copy.splice(index, 1);
+          return copy;
+        });
+        setImages(prev => {
+          const copy = [...prev];
+          copy.splice(index, 1);
+          return copy;
+        });
+      })
+      .catch(e => {
+        toast.error(e.message);
+      })
+      .finally(() => {
+        setImageToRemove('');
+      });
+  };
 
   useEffect(() => {
     if (isCreate) {
@@ -127,6 +167,27 @@ const PropertyForm = ({
       formUpload.setValue('images', images);
     }
   }, [images]);
+
+  useEffect(() => {
+    if (!isCreate && property?.data) {
+      setPreviewImages(property.data.images);
+      form.reset({
+         name: property.data.name,
+      description: property.data.description,
+      address: property.data.address,
+      regularPrice: property.data.regularPrice,
+      discountPrice: property.data.discountPrice,
+      type: property.data.type,
+      bedroom: property.data.name,
+      bathroom: property.data.bathroom,
+      parking: property.data.parking,
+      furnished: property.data.furnished,
+      offer: property.data.offer,
+      });
+    }
+  }, [property]);
+
+  if (isPropertyLoading) return <PropertySkeleton />;
 
   return (
     <div
@@ -167,7 +228,7 @@ const PropertyForm = ({
                     key={index}
                     className="relative w-32 h-32 border rounded overflow-hidden"
                   >
-                    {removingImageUrl === src && isLoadingRemoveImage ? (
+                    {imageToRemove === src && isRemoveImageLoading ? (
                       <div className="absolute top-0 left-0 w-full h-full bg-black/50 flex items-center justify-center">
                         <TbLoader className="animate-spin" />
                       </div>
@@ -181,7 +242,7 @@ const PropertyForm = ({
 
                     <button
                       type="button"
-                      disabled={isLoadingRemoveImage}
+                      disabled={isRemoveImageLoading}
                       onClick={() => handleRemoveImage(index)}
                       className="absolute top-0 right-0 bg-red-500 text-white text-xs px-2 py-1 opacity-80 hover:opacity-100"
                     >
@@ -193,8 +254,8 @@ const PropertyForm = ({
             )}
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={isLoadingUpload}>
-                {isLoadingUpload ? (
+              <Button type="submit" disabled={isUploadLoading}>
+                {isUploadLoading ? (
                   <>
                     <TbLoader className="animate-spin" />
                     Uploading..
@@ -302,7 +363,8 @@ const PropertyForm = ({
               <FormItem>
                 <FormLabel>Type</FormLabel>
                 <Select
-                  defaultValue={field.value}
+                  key={field.value}
+                  value={field.value}
                   onValueChange={field.onChange}
                 >
                   <FormControl>
