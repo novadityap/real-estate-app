@@ -337,7 +337,7 @@ const uploadImage = async (req, res, next) => {
     folderName: 'properties',
     existingFileCount,
   });
-
+  
   for (const file of files) {
     property.images.push(file.secure_url);
   }
