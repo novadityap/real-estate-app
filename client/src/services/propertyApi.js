@@ -1,6 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import axiosBaseQuery from '@/app/baseQuery.js';
-import buildFormData from '@/utils/buildFormData.js';
 
 const propertyApi = createApi({
   reducerPath: 'propertyApi',
@@ -11,22 +10,19 @@ const propertyApi = createApi({
       query: ({ data, propertyId }) => ({
         url: `/properties/${propertyId}/images`,
         method: 'POST',
-        data: buildFormData(data, {
-          fileFields: 'images',
-          isMultiple: true,
-        }),
-        headers: { 'Content-Type': 'multipart/form-data' }
+        data,
+        headers: { 'Content-Type': 'multipart/form-data' },
       }),
-      invalidatesTags: [{ type: 'Property', id: 'LIST' }],
+      invalidatesTags: (result, error, { propertyId }) => [
+        { type: 'Property', id: 'LIST' },
+        { type: 'Property', id: propertyId },
+      ],
     }),
     createProperty: builder.mutation({
       query: data => ({
         url: '/properties',
         method: 'POST',
-        data: buildFormData(data, {
-          fileFields: 'images',
-          isMultiple: true,
-        }),
+        data,
         headers: { 'Content-Type': 'multipart/form-data' },
       }),
       invalidatesTags: [{ type: 'Property', id: 'LIST' }],
@@ -71,7 +67,7 @@ const propertyApi = createApi({
         url: `/properties/${propertyId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, propertyId) => [
+      invalidatesTags: (result, error, { propertyId }) => [
         { type: 'Property', id: propertyId },
         { type: 'Property', id: 'LIST' },
       ],

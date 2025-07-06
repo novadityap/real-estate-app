@@ -1,6 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import axiosBaseQuery from '@/app/baseQuery.js';
-import buildFormData from '@/utils/buildFormData.js';
 
 const userApi = createApi({
   reducerPath: 'userApi',
@@ -40,10 +39,7 @@ const userApi = createApi({
       query: ({ data, userId }) => ({
         url: `/users/${userId}`,
         method: 'PATCH',
-        data: buildFormData(data, {
-          fileFields: 'avatar',
-          isMultiple: false,
-        }),
+        data,
         headers: { 'Content-Type': 'multipart/form-data' },
       }),
       invalidatesTags: (result, error, { userId }) => [
@@ -55,10 +51,7 @@ const userApi = createApi({
       query: ({ data, userId }) => ({
         url: `/users/${userId}/profile`,
         method: 'PATCH',
-        data: buildFormData(data, {
-          fileFields: 'avatar',
-          isMultiple: false,
-        }),
+        data,
         headers: { 'Content-Type': 'multipart/form-data' },
       }),
       invalidatesTags: (result, error, { userId }) => [
