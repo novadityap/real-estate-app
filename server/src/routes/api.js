@@ -6,6 +6,7 @@ import userController from '../controllers/userController.js';
 import authController from '../controllers/authController.js';
 import authorize from '../middlewares/authorize.js';
 import authenticate from '../middlewares/authenticate.js';
+import optionalAuth from '../middlewares/optionalAuth.js';
 
 const apiRouter = express.Router();
 
@@ -15,9 +16,9 @@ apiRouter.post('/auth/verify-email/:verificationToken', authController.verifyEma
 apiRouter.post('/auth/resend-verification', authController.resendVerification);
 apiRouter.post('/auth/refresh-token', authController.refreshToken);
 apiRouter.post('/auth/signin', authController.signin);
-apiRouter.post('/auth/request-reset-password', authController.resetPasswordRequest);
+apiRouter.post('/auth/request-reset-password', authController.requestResetPassword);
 apiRouter.post('/auth/reset-password/:resetToken', authController.resetPassword);
-apiRouter.get('/properties/search', propertyController.search);
+apiRouter.get('/properties/search', optionalAuth, propertyController.search);
 apiRouter.get('/properties/:propertyId', propertyController.show);
 
 // Auth API

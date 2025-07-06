@@ -11,7 +11,6 @@ const checkOwnership = async ({
 
     if (modelName === 'user') {
       if (currentUser.id === paramsId) return;
-
       throw new ResponseError('Permission denied', 403);
     }
 
