@@ -96,7 +96,7 @@ const Sidebar = ({ isSidebarOpen, ref }) => {
     { name: 'Home', icon: TbHome, link: '/' },
     ...(token
       ? [
-          { name: 'Dashboard', icon: TbApps, link: '/dashboard' },
+          { name: 'Dashboard', icon: TbApps, link: currentUser.role === 'admin' ? '/dashboard' : '/dashboard/properties' },
           { name: 'Sign Out', icon: TbLogout, action: handleSignout },
         ]
       : []),
