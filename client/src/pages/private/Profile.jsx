@@ -76,7 +76,6 @@ const Profile = () => {
     isLoading,
   } = useFormHandler({
     fileFieldname: 'avatar',
-    method: 'PATCH',
     isCreate: false,
     page: 'profile',
     params: [{ name: 'userId', value: currentUser.id }],

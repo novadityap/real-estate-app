@@ -8,6 +8,12 @@ import {
 } from '@/features/authSlice';
 import { toast } from 'react-hot-toast';
 
+const sanitizeNull = data => {
+  return Object.fromEntries(
+    Object.entries(data).map(([key, value]) => [key, value ?? ''])
+  );
+};
+
 const getChangedData = (dirtyFields, form) => {
   return Object.fromEntries(
     Object.keys(dirtyFields).map(key => [key, form.getValues(key)])
@@ -19,7 +25,6 @@ const filterEmptyValues = data => {
     Object.entries(data).filter(([_, value]) => value !== '')
   );
 };
-
 
 const buildFormData = ({ data, fileFieldname, isMultiple, method }) => {
   const formData = new FormData();
@@ -97,7 +102,7 @@ const useFormHandler = ({
       toast.success(result.message);
       setMessage(result.message);
 
-      form.reset(result.data);
+      form.reset(sanitizeNull(result.data));
     } catch (e) {
       if (e.errors) {
         Object.keys(e.errors).forEach(key => {
