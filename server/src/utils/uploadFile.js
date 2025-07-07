@@ -1,7 +1,6 @@
 import formidable from 'formidable';
 import formatError from './formatError.js';
 import ResponseError from './responseError.js';
-import logger from './logger.js';
 import cloudinary from './cloudinary.js';
 
 const normalizeField = fields => {

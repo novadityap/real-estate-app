@@ -10,7 +10,6 @@ import {
   updateTestProperty,
   getTestProperty,
   createTestUser,
-  getTestUser,
   removeAllTestUsers,
   removeTestFile,
   checkFileExists,
