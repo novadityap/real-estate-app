@@ -32,7 +32,7 @@ import {
 } from '@/services/propertyApi';
 import { Skeleton } from '@/components/shadcn/skeleton';
 
-const PropertySkeleton = ({isCreate}) => (
+const PropertySkeleton = ({ isCreate }) => (
   <div className="space-y-4">
     {!isCreate && (
       <div className="flex justify-center">
@@ -54,11 +54,13 @@ const PropertySkeleton = ({isCreate}) => (
   </div>
 );
 
-const PropertyForm = ({ id, onSubmitComplete, onCancel, isCreate}) => {
-  const { data: property, isLoading: isPropertyLoading } =
-    useShowPropertyQuery(id, {
+const PropertyForm = ({ id, onSubmitComplete, onCancel, isCreate }) => {
+  const { data: property, isLoading: isPropertyLoading } = useShowPropertyQuery(
+    id,
+    {
       skip: isCreate || !id,
-    });
+    }
+  );
   const [previewImages, setPreviewImages] = useState([]);
   const [images, setImages] = useState([]);
   const [imageToRemove, setImageToRemove] = useState('');
@@ -73,15 +75,13 @@ const PropertyForm = ({ id, onSubmitComplete, onCancel, isCreate}) => {
     isMultiple: true,
     params: [{ name: 'propertyId', value: id }],
     mutation: useUploadPropertyImageMutation,
-    defaultValues: { images: ''}
+    defaultValues: { images: '' },
   });
   const { form, handleSubmit, isLoading } = useFormHandler({
     isCreate,
     fileFieldname: 'images',
     isMultiple: true,
-    mutation: isCreate
-      ? useCreatePropertyMutation
-      : useUpdatePropertyMutation,
+    mutation: isCreate ? useCreatePropertyMutation : useUpdatePropertyMutation,
     ...(!isCreate && {
       params: [{ name: 'propertyId', value: id }],
     }),
@@ -90,9 +90,9 @@ const PropertyForm = ({ id, onSubmitComplete, onCancel, isCreate}) => {
       name: '',
       description: '',
       address: '',
+      type: '',
       regularPrice: '',
       discountPrice: '',
-      type: '',
       bedroom: '',
       bathroom: '',
       parking: false,
@@ -171,18 +171,19 @@ const PropertyForm = ({ id, onSubmitComplete, onCancel, isCreate}) => {
   useEffect(() => {
     if (!isCreate && property?.data) {
       setPreviewImages(property.data.images);
+      console.log(property.data)
       form.reset({
-         name: property.data.name,
-      description: property.data.description,
-      address: property.data.address,
-      regularPrice: property.data.regularPrice,
-      discountPrice: property.data.discountPrice,
-      type: property.data.type,
-      bedroom: property.data.name,
-      bathroom: property.data.bathroom,
-      parking: property.data.parking,
-      furnished: property.data.furnished,
-      offer: property.data.offer,
+        name: property.data.name,
+        description: property.data.description,
+        address: property.data.address,
+        regularPrice: property.data.regularPrice,
+        discountPrice: property.data.discountPrice ?? '',
+        type: property.data.type,
+        bedroom: property.data.bedroom,
+        bathroom: property.data.bathroom,
+        parking: property.data.parking,
+        furnished: property.data.furnished,
+        offer: property.data.offer,
       });
     }
   }, [property]);

@@ -60,7 +60,6 @@ const UserForm = ({id, onSubmitComplete, onCancel, isCreate}) => {
   const { data: roles, isLoading: isRolesLoading } = useListRolesQuery();
   const { form, handleSubmit, isLoading } = useFormHandler({
     fileFieldname: 'avatar',
-    formType: 'datatable',
     isCreate,
     mutation: isCreate ? useCreateUserMutation : useUpdateUserMutation,
     onSubmitComplete,
@@ -72,7 +71,6 @@ const UserForm = ({id, onSubmitComplete, onCancel, isCreate}) => {
     },
     ...(!isCreate && { 
       params: [{ name: 'userId', value: id }],
-      method: 'PATCH' 
     }),
   });
 

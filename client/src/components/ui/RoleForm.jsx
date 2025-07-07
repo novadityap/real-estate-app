@@ -32,7 +32,7 @@ const RoleFormSkeleton = () => (
 );
 
 const RoleForm = ({onSubmitComplete, onCancel, isCreate, id}) => {
-   const { data: role, isLoading: isRoleLoading } = useShowRoleQuery(id, {
+  const { data: role, isLoading: isRoleLoading } = useShowRoleQuery(id, {
     skip: isCreate || !id
   });
   const { form, handleSubmit, isLoading } = useFormHandler({
