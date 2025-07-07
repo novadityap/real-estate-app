@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { Button } from '@/components/shadcn/button';
 import { Input } from '@/components/shadcn/input';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
@@ -73,7 +72,7 @@ const Profile = () => {
   const {
     form,
     handleSubmit,
-    isLoading,
+    isLoading
   } = useFormHandler({
     fileFieldname: 'avatar',
     isCreate: false,
@@ -92,6 +91,7 @@ const Profile = () => {
       form.reset({
         username: user.data.username,
         email: user.data.email,
+        password: ''
       });
     }
   }, [user]);
@@ -112,7 +112,7 @@ const Profile = () => {
               <div className="flex justify-center">
                 <Avatar className="size-32">
                   <AvatarImage
-                    src={user?.data.avatar}
+                    src={user?.data?.avatar}
                     fallback={
                       <AvatarFallback>{currentUser.username.charAt(0).toUpperCase()}</AvatarFallback>
                     }

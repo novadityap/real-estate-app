@@ -80,6 +80,7 @@ const UserForm = ({id, onSubmitComplete, onCancel, isCreate}) => {
         username: user.data.username,
         email: user.data.email,
         roleId: user.data.roleId,
+        password: ''
       });
     }
   }, [user, roles]);
