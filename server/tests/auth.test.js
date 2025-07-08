@@ -8,7 +8,7 @@ import app from '../src/app.js';
 import {
   createTestRefreshToken,
   getTestRefreshToken,
-  removeAllTestRefreshToken,
+  removeAllTestRefreshTokens,
   createTestUser,
   removeAllTestUsers,
   updateTestUser,
@@ -210,7 +210,7 @@ describe('POST /api/auth/signout', () => {
 
   afterEach(async () => {
     await removeAllTestUsers();
-    await removeAllTestRefreshToken();
+    await removeAllTestRefreshTokens();
   });
 
   it('should return an error if refresh token is not provided', async () => {
@@ -253,7 +253,7 @@ describe('POST /api/auth/refresh-token', () => {
 
   afterEach(async () => {
     await removeAllTestUsers();
-    await removeAllTestRefreshToken();
+    await removeAllTestRefreshTokens();
   });
 
   it('should return an error if refresh token is not provided', async () => {

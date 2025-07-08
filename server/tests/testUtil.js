@@ -34,7 +34,7 @@ export const createTestRefreshToken = async () => {
   });
 };
 
-export const removeAllTestRefreshToken = async () => {
+export const removeAllTestRefreshTokens = async () => {
   await prisma.refreshToken.deleteMany({
     where: {
       user: {
