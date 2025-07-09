@@ -393,29 +393,29 @@ describe('DELETE /api/properties/:propertyId', () => {
   });
 });
 
-describe('POST /api/properties/:propertyId/images', () => {
-  it('should upload property images', async () => {
-    await createTestUser();
-    await createAccessToken();
-    await createTestProperty();
+  describe('POST /api/properties/:propertyId/images', () => {
+    it('should upload property images', async () => {
+      await createTestUser();
+      await createAccessToken();
+      await createTestProperty();
 
-    const property = await getTestProperty();
-    const result = await request(app)
-      .post(`/api/properties/${property.id}/images`)
-      .set('Authorization', `Bearer ${global.accessToken}`)
-      .set('Content-Type', 'multipart/form-data')
-      .attach('images', global.testPropertyImagePath);
+      const property = await getTestProperty();
+      const result = await request(app)
+        .post(`/api/properties/${property.id}/images`)
+        .set('Authorization', `Bearer ${global.accessToken}`)
+        .set('Content-Type', 'multipart/form-data')
+        .attach('images', global.testPropertyImagePath);
 
-    expect(result.status).toBe(201);
-    expect(result.body.message).toBe('Property images uploaded successfully');
+      expect(result.status).toBe(201);
+      expect(result.body.message).toBe('Property images uploaded successfully');
 
-    const updatedProperty = await getTestProperty();
+      const updatedProperty = await getTestProperty();
 
-    await removeAllTestProperties();
-    await removeAllTestUsers();
-    await removeTestFile(updatedProperty.images);
+      await removeAllTestProperties();
+      await removeAllTestUsers();
+      await removeTestFile(updatedProperty.images);
+    });
   });
-});
 
 describe('DELETE /api/properties/:propertyId/images', () => {
   beforeEach(async () => {
