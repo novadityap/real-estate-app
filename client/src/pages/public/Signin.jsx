@@ -1,10 +1,6 @@
 import { Button } from '@/components/shadcn/button';
 import { Input } from '@/components/shadcn/input';
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '@/components/shadcn/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/shadcn/alert';
 import {
   Form,
   FormControl,
@@ -24,20 +20,22 @@ import { useSigninMutation } from '@/services/authApi';
 import { useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router';
 import { useEffect } from 'react';
-import { TbLoader, TbExclamationCircle } from 'react-icons/tb';
+import { TbLoader, TbExclamationCircle, TbBrandGoogle } from 'react-icons/tb';
 import useFormHandler from '@/hooks/useFormHandler';
+import useGoogleSignin from '@/hooks/useGoogleSignin';
 
 const Signin = () => {
   const navigate = useNavigate();
+  const handleGoogleSignin = useGoogleSignin();
   const { token } = useSelector(state => state.auth);
   const { form, handleSubmit, isLoading, error, isSuccess, message } =
     useFormHandler({
       page: 'signin',
       mutation: useSigninMutation,
       formType: 'signin',
-      defaultValues: { 
-        email: '', 
-        password: '' 
+      defaultValues: {
+        email: '',
+        password: '',
       },
     });
 
@@ -53,7 +51,7 @@ const Signin = () => {
             Sign In
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           {error?.code === 401 && (
             <Alert variant="destructive">
               <TbExclamationCircle className="size-5 text-destructive" />
@@ -89,11 +87,7 @@ const Signin = () => {
                   </FormItem>
                 )}
               />
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <TbLoader className="animate-spin mr-2 size-5" />
@@ -105,12 +99,18 @@ const Signin = () => {
               </Button>
             </form>
           </Form>
+          <Button
+            onClick={handleGoogleSignin}
+            variant="outline"
+            className="w-full flex items-center gap-2"
+          >
+            <TbBrandGoogle size={20} />
+            Sign in with Google
+          </Button>
         </CardContent>
         <CardFooter className="flex flex-col items-center">
           <div className="flex items-center justify-betweens gap-2">
-            <p className="text-body text-sm">
-              Don&apos;t have an account?
-            </p>
+            <p className="text-body text-sm">Don&apos;t have an account?</p>
             <Link
               to="/signup"
               className="text-sm text-body hover:underline hover:text-blue-600"

@@ -23,6 +23,7 @@ import PrivateRoute from '@/routes/PrivateRoute';
 import DashboardEntry from '@/routes/DashboardEntry';
 import Property from '@/pages/private/Property';
 import PropertyDetail from '@/pages/public/PropertyDetail';
+import GoogleCallback from '@/pages/public/GoogleCallback';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -56,6 +57,7 @@ const router = createBrowserRouter(
           </Route>
         </Route>
       </Route>
+      <Route path="google/callback" element={<GoogleCallback />} />
       <Route path="unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<NotFound />} />
     </Route>

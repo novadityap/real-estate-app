@@ -35,14 +35,14 @@ const Sidebar = ({ isOpen, currentUser, ref }) => {
       ? [
           { name: 'Dashboard', icon: TbApps, link: '/dashboard' },
           { name: 'Users', icon: TbUsersGroup, link: '/dashboard/users' },
-          {
-            name: 'Properties',
-            icon: TbBuildingEstate,
-            link: '/dashboard/properties',
-          },
           { name: 'Roles', icon: TbUserCog, link: '/dashboard/roles' },
         ]
       : []),
+    {
+      name: 'Properties',
+      icon: TbBuildingEstate,
+      link: '/dashboard/properties',
+    },
     { name: 'Profile', icon: TbUserEdit, link: '/dashboard/profile' },
   ];
 

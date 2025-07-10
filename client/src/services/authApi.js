@@ -35,29 +35,36 @@ const authApi = createApi({
       query: verificationToken => ({
         url: `/auth/verify-email/${verificationToken}`,
         method: 'POST',
-      }),
+      })
     }),
     resendVerification: builder.mutation({
       query: data => ({
         url: '/auth/resend-verification',
         method: 'POST',
         data,
-      }),
+      })
     }),
     requestResetPassword: builder.mutation({
       query: data => ({
         url: '/auth/request-reset-password',
         method: 'POST',
         data,
-      }),
+      })
     }),
     resetPassword: builder.mutation({
       query: ({ data, resetToken }) => ({
         url: `/auth/reset-password/${resetToken}`,
         method: 'POST',
         data,
-      }),
+      })
     }),
+    googleSignin: builder.mutation({
+      query: data => ({
+        url: '/auth/google-signin',
+        method: 'POST',
+        data,
+      })
+    })
   }),
 });
 
@@ -70,6 +77,7 @@ export const {
   useResendVerificationMutation,
   useRequestResetPasswordMutation,
   useResetPasswordMutation,
+  useGoogleSigninMutation
 } = authApi;
 
 export default authApi;

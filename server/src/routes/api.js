@@ -16,6 +16,7 @@ apiRouter.post('/auth/verify-email/:verificationToken', authController.verifyEma
 apiRouter.post('/auth/resend-verification', authController.resendVerification);
 apiRouter.post('/auth/refresh-token', authController.refreshToken);
 apiRouter.post('/auth/signin', authController.signin);
+apiRouter.post('/auth/google-signin', authController.googleSignin);
 apiRouter.post('/auth/request-reset-password', authController.requestResetPassword);
 apiRouter.post('/auth/reset-password/:resetToken', authController.resetPassword);
 apiRouter.get('/properties/search', optionalAuth, propertyController.search);

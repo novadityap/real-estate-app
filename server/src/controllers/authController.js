@@ -13,6 +13,13 @@ import {
   resetPasswordSchema,
 } from '../validations/userValidation.js';
 import prisma from '../utils/database.js';
+import { OAuth2Client } from 'google-auth-library';
+import slugify from 'slugify';
+
+const generateUsername = (username, count) => {
+  const slug = slugify(username, { lower: true, strict: true });
+  return count > 0 ? `${slug}${count}` : slug;
+};
 
 const signup = async (req, res, next) => {
   const fields = validate(signupSchema, req.body);
@@ -196,6 +203,102 @@ const signin = async (req, res, next) => {
     });
 };
 
+const googleSignin = async (req, res) => {
+  if (!req.body.code) {
+    throw new ResponseError('Authorization code is not provided', 401);
+  }
+
+  const client = new OAuth2Client({
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    redirectUri: process.env.GOOGLE_REDIRECT_URI,
+  });
+
+  const { tokens } = await client.getToken(req.body.code);
+  const ticket = await client.verifyIdToken({
+    idToken: tokens.id_token,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+
+  const { email, name } = ticket.getPayload();
+  let user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user) {
+    let username;
+    let count = 0;
+    let isUsernameTaken = true;
+
+    while (isUsernameTaken) {
+      username = generateUsername(name, count);
+      const existing = await prisma.user.findUnique({ where: { username } });
+      if (!existing) isUsernameTaken = false;
+      count++;
+    }
+
+    const userRole = await prisma.role.findUnique({ where: { name: 'user' } });
+
+    user = await prisma.user.create({
+      data: {
+        email,
+        username,
+        avatar: process.env.DEFAULT_AVATAR_URL,
+        roleId: userRole.id,
+        isVerified: true,
+      },
+    });
+  } else if (!user.isVerified) {
+    await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        isVerified: true,
+      },
+    });
+  }
+
+  user = await prisma.user.findUnique({
+    where: { id: user.id },
+    include: { role: true },
+  });
+
+  const payload = { sub: user.id, role: user.role.name };
+  const token = jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES,
+  });
+  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: process.env.JWT_REFRESH_EXPIRES,
+  });
+  const decodedRefreshToken = jwt.decode(refreshToken);
+
+  await prisma.refreshToken.create({
+    data: {
+      token: refreshToken,
+      userId: user.id,
+      expiresAt: new Date(decodedRefreshToken.exp * 1000),
+    },
+  });
+
+  logger.info('signed in successfully');
+  res
+    .cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
+    .json({
+      code: 200,
+      message: 'Signed in successfully',
+      data: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
+        role: user.role.name,
+        token,
+      },
+    });
+};
+
 const signout = async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken)
@@ -339,4 +442,5 @@ export default {
   resetPassword,
   verifyEmail,
   resendVerification,
+  googleSignin,
 };
