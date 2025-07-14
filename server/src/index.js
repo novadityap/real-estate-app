@@ -1,6 +1,6 @@
 import app from './app.js';
 import logger from './utils/logger.js';
-import loadEnv from '/utils/loadEnv.js'
+import loadEnv from './utils/loadEnv.js'
 
 (async () => {
   loadEnv();
