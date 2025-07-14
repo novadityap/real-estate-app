@@ -8,7 +8,11 @@ RUN npm install
 
 COPY . .
 
+COPY .env.production .env
+
+RUN npx prisma generate
+
 EXPOSE 4000
 
-CMD ["sh", "-c", "npm run seed && npm start"]
+CMD ["sh", "-c", "npx prisma generate && npm run seed && npm start"]
 
