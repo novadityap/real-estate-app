@@ -1,9 +1,9 @@
 import app from './app.js';
-import 'dotenv/config';
 import logger from './utils/logger.js';
+import loadEnv from '/utils/loadEnv.js'
 
 (async () => {
-  const port = process.env.PORT || 3000;
+  loadEnv();
 
-  app.listen(port, '0.0.0.0', () => logger.info(`Server running on port ${port}`));
+  app.listen(process.env.PORT, '0.0.0.0', () => logger.info(`Server running on port ${process.env.PORT}`));
 })();
