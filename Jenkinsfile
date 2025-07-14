@@ -1,70 +1,69 @@
 pipeline {
-
   agent any
 
-  tools {
-    nodejs 'node:22'
-  }
-
-  environment {
-    DOCKER_IMAGE = 'novadityap/real-estate-server'
-  }
-
   stages {
+    stage('Clean Workspace') {
+      steps {
+        deleteDir()
+      }
+    }
+
     stage('Checkout') {
       steps {
         checkout scm
       }
     }
 
-    stage('Install client dependencies and build') {
+    stage('Copy env file') {
       steps {
-         dir('client') {
-          sh '''
-            cp /var/jenkins_home/env/.env.client.realestate .env
-            npm install
-            npm run build
-          '''
+        withCredentials([
+          file(credentialsId: 'real-estate-app-client-dev-env', variable: 'CLIENT_DEV_ENV'),
+          file(credentialsId: 'real-estate-app-client-env', variable: 'CLIENT_ENV'),
+          file(credentialsId: 'real-estate-app-server-dev-env', variable: 'SERVER_DEV_ENV'),
+        ]) {
+          sh """
+            cp "$CLIENT_DEV_ENV" client/.env.development
+            cp "$CLIENT_ENV" client/.env.production
+            cp "$SERVER_DEV_ENV" server/.env.development
+          """
         }
       }
     }
 
-    stage('Install server dependencies') {
+    stage('Build & Up Dev Containers') {
       steps {
-        dir('server') {
-          sh 'npm install'
-        }
+        sh 'docker compose -f docker-compose.development.yml up -d --build'
       }
     }
 
-    stage('Test server') {
+    stage('Run Server Tests') {
       steps {
-        dir('server') {
-          sh '''
-            cp /var/jenkins_home/env/.env.server.realestate .env
-            npm run test
-          '''
-        }
+        sh 'docker compose -f docker-compose.development.yml exec server npm run test'
       }
     }
 
-    stage('Build server docker image') {
+    stage('Build Production Docker Images') {
       steps {
-        dir('server') {
-          sh 'docker build -t $DOCKER_IMAGE .'
-        }
+        sh 'docker compose -f docker-compose.production.yml build'
       }
     }
 
-    stage('Push server docker image') {
+   stage('Push Docker Images') {
       steps {
-        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+        withCredentials([
+          usernamePassword(
+            credentialsId: 'dockerhub',
+            usernameVariable: 'DOCKER_USER',
+            passwordVariable: 'DOCKER_PASS',
+          ),
+        ]) {
           sh '''
             echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-            docker push $DOCKER_IMAGE
+            docker compose -f docker-compose.production.yml push
           '''
         }
       }
     }
   }
-} 
+}
+
