@@ -10,7 +10,7 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - mongo
+      - postgres
     restart: always
     networks:
       - real-estate-app-dev
