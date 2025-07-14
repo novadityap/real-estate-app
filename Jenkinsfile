@@ -14,6 +14,14 @@ pipeline {
       }
     }
 
+    stage('Stop & Remove Dev Containers') {
+      steps {
+        sh '''
+          docker compose -f docker-compose.development.yml down --remove-orphans || true
+        '''
+      }
+    }
+
     stage('Copy env file') {
       steps {
         withCredentials([
@@ -48,7 +56,7 @@ pipeline {
       }
     }
 
-   stage('Push Docker Images') {
+    stage('Push Docker Images') {
       steps {
         withCredentials([
           usernamePassword(
@@ -62,6 +70,14 @@ pipeline {
             docker compose -f docker-compose.production.yml push
           '''
         }
+      }
+    }
+
+    stage('Cleanup Dev Containers After Push') {
+      steps {
+        sh '''
+          docker compose -f docker-compose.development.yml down --remove-orphans || true
+        '''
       }
     }
   }
