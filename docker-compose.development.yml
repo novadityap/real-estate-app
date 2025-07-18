@@ -38,7 +38,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - real-estate-postgres-data:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: aditya123
       POSTGRES_DB: real_estate_app
@@ -46,8 +46,8 @@ services:
       - real-estate-app-dev
 
 volumes:
-  postgres-data:
-    name: postgres-data
+  real-estate-postgres-data:
+    name: real-estate-postgres-data
 networks:
   real-estate-app-dev:
     name: real-estate-app-dev
