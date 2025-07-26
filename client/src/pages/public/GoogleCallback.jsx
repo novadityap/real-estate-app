@@ -20,7 +20,7 @@ const GoogleCallback = () => {
       .then(result => {
         dispatch(setToken(result.data.token));
         dispatch(setCurrentUser(result.data));
-        navigate('/dashboard');
+        navigate('/');
       })
       .catch(() => navigate('/signin'));
   }, []);
