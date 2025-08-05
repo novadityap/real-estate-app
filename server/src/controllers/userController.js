@@ -45,13 +45,6 @@ const show = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
   const userId = validate(getUserSchema, req.params.userId);
-  await checkOwnership({
-    modelName: 'user',
-    paramsId: userId,
-    ownerFieldName: 'userId',
-    currentUser: req.user,
-  });
-
   const user = await prisma.user.findUnique({
     where: {
       id: userId,
@@ -60,6 +53,13 @@ const updateProfile = async (req, res, next) => {
 
   if (!user) throw new ResponseError('User not found', 404);
 
+  await checkOwnership({
+    modelName: 'user',
+    paramsId: userId,
+    ownerFieldName: 'userId',
+    currentUser: req.user,
+  });
+
   const { files, fields } = await uploadFile(req, {
     fieldname: 'avatar',
     folderName: 'avatars',
@@ -67,33 +67,23 @@ const updateProfile = async (req, res, next) => {
   });
 
   const errors = {};
-  const checkDuplicateConditions = [];
+  const checkDuplicateConditions = [
+    { id: { not: user.id } },
+    ...(fields.username ? [{ username: fields.username }] : []),
+    ...(fields.email ? [{ email: fields.email }] : []),
+  ];
 
-  if (fields.username && fields.username !== user.username) {
-    checkDuplicateConditions.push({ username: fields.username });
-  }
-  if (fields.email && fields.email !== user.email) {
-    checkDuplicateConditions.push({ email: fields.email });
-  }
-
-  if (checkDuplicateConditions.length > 0) {
+  if (checkDuplicateConditions.length > 1) {
     const existingUser = await prisma.user.findFirst({
       where: {
-        AND: [
-          { id: { not: userId } },
-          {
-            OR: checkDuplicateConditions,
-          },
-        ],
+        OR: checkDuplicateConditions,
       },
     });
 
-    if (existingUser?.username === fields.username) {
+    if (existingUser?.username === fields.username)
       errors.username = 'Username already in use';
-    }
-    if (existingUser?.email === fields.email) {
+    if (existingUser?.email === fields.email)
       errors.email = 'Email already in use';
-    }
   }
 
   if (Object.keys(errors).length > 0)
@@ -260,13 +250,6 @@ const create = async (req, res, next) => {
 
 const update = async (req, res, next) => {
   const userId = validate(getUserSchema, req.params.userId);
-  await checkOwnership({
-    modelName: 'user',
-    paramsId: userId,
-    ownerFieldName: 'userId',
-    currentUser: req.user,
-  });
-
   const user = await prisma.user.findUnique({
     where: {
       id: userId,
@@ -275,6 +258,13 @@ const update = async (req, res, next) => {
 
   if (!user) throw new ResponseError('User not found', 404);
 
+  await checkOwnership({
+    modelName: 'user',
+    paramsId: user.id,
+    ownerFieldName: 'userId',
+    currentUser: req.user,
+  });
+
   const { files, fields } = await uploadFile(req, {
     fieldname: 'avatar',
     folderName: 'avatars',
@@ -282,20 +272,16 @@ const update = async (req, res, next) => {
   });
 
   const errors = {};
-  const checkDuplicateConditions = [];
+  const checkDuplicateConditions = [
+    { id: { not: user.id } },
+    ...(fields.username ? [{ username: fields.username }] : []),
+    ...(fields.email ? [{ email: fields.email }] : []),
+  ];
 
-  if (fields.username && fields.username !== user.username) {
-    checkDuplicateConditions.push({ username: fields.username });
-  }
-
-  if (fields.email && fields.email !== user.email) {
-    checkDuplicateConditions.push({ email: fields.email });
-  }
-
-  if (checkDuplicateConditions.length > 0) {
+  if (checkDuplicateConditions.length > 1) {
     const existingUser = await prisma.user.findFirst({
       where: {
-        AND: [{ id: { not: userId } }, { OR: checkDuplicateConditions }],
+        OR: checkDuplicateConditions,
       },
     });
 

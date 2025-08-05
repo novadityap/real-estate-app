@@ -1,4 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+'use client';
+
 import { Button } from '@/components/shadcn/button';
 import { Input } from '@/components/shadcn/input';
 import useFormHandler from '@/hooks/useFormHandler';
@@ -171,7 +172,6 @@ const PropertyForm = ({ id, onSubmitComplete, onCancel, isCreate }) => {
   useEffect(() => {
     if (!isCreate && property?.data) {
       setPreviewImages(property.data.images);
-      console.log(property.data)
       form.reset({
         name: property.data.name,
         description: property.data.description,

@@ -1,5 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import axiosBaseQuery from '@/app/baseQuery.js';
+import axiosBaseQuery from '@/lib/baseQuery.js';
 
 const propertyApi = createApi({
   reducerPath: 'propertyApi',
@@ -78,7 +78,7 @@ const propertyApi = createApi({
         method: 'DELETE',
         data,
       }),
-      invalidatesTags: (result, error, propertyId) => [
+      invalidatesTags: (result, error, { propertyId }) => [
         { type: 'Property', id: propertyId },
         { type: 'Property', id: 'LIST' },
       ],
